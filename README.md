@@ -1,4 +1,6 @@
-<img src="docs/readme-splash.webp" alt="fragments splash" style="width: 100%; max-width: 500px; display: block; margin: 0 auto;">
+<p align="center">
+  <img src="docs/readme-splash.webp" alt="fragments splash" width="500">
+</p>
 
 # Fragments
 
