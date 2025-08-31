@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Scripts output (scraping results)
+scripts/output/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

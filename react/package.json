@@ -8,9 +8,13 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "scrape": "node scripts/scrape-react-dev.js",
+    "bulk-scrape": "node scripts/bulk-scraper.js"
   },
   "dependencies": {
+    "cheerio": "^1.1.2",
+    "puppeteer": "^24.19.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "web-vitals": "^2.1.4"
