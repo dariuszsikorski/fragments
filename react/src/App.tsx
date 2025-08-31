@@ -14,12 +14,9 @@ function App() {
   return (
     <div className="App">
       <div className="App_layout">
-        {/* Mobile overlay */}
         {sidebarOpen && <div className="App_overlay" onClick={toggleSidebar}></div>}
         
-        {/* Sidebar */}
         <aside className={`App_sidebar ${sidebarOpen ? 'is-open' : ''}`}>
-          {/* Top section - flex: 0 */}
           <div className="App_sidebarTop">
             <div className="App_sidebarHeader">
               <h2>Navigation</h2>
@@ -27,7 +24,6 @@ function App() {
             </div>
           </div>
 
-          {/* Middle section - flex: 1 (scrollable) */}
           <div className="App_sidebarMiddle">
             <nav className="App_sidebarNav">
               <ul>
@@ -54,7 +50,6 @@ function App() {
             </div>
           </div>
 
-          {/* Bottom section - flex: 0 */}
           <div className="App_sidebarBottom">
             <div className="App_sidebarFooter">
               <p>© 2025 React App</p>
@@ -63,9 +58,7 @@ function App() {
           </div>
         </aside>
 
-        {/* Main content */}
         <main className="App_main">
-          {/* Mobile header with hamburger */}
           <header className="App_mobileHeader">
             <button className="App_hamburger" onClick={toggleSidebar}>
               <span></span>
@@ -75,7 +68,6 @@ function App() {
             <h1>React App</h1>
           </header>
 
-          {/* Content area */}
           <div className="App_content">
             <img src={logo} className="App-logo" alt="logo" />
             <h1>Welcome to React</h1>
