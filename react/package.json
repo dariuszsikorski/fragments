@@ -5,18 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite --open",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build", 
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "scrape": "node scripts/scrape-react-dev.js",
-    "bulk-scrape": "node scripts/bulk-scraper.js"
+    "docs": "node scripts/run-all-phases.js"
   },
   "dependencies": {
+    "@mozilla/readability": "^0.6.0",
     "cheerio": "^1.1.2",
+    "jsdom": "^26.1.0",
     "puppeteer": "^24.19.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "turndown": "^7.2.1",
     "web-vitals": "^2.1.4"
   },
   "devDependencies": {

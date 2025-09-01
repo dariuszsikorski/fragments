@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 
+/**
+ * Phase 1: Extract Sidebar Links
+ * Scrapes https://react.dev/reference sidebar navigation and extracts 101+ documentation links
+ * Output: react-reference-links-{timestamp}.json
+ */
+
 import puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import fs from 'fs/promises';
