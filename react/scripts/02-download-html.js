@@ -15,6 +15,119 @@ const HTML_DIR = './scripts/output/html';
 const CONCURRENT_LIMIT = 10;
 const DELAY_BETWEEN_BATCHES = 2000;
 
+// Naming Functions
+const CHAPTER_MAPPING = {
+  '/reference/react': { number: 1, name: 'React Core' },
+  '/reference/react-dom': { number: 2, name: 'React DOM' },
+  '/reference/react-compiler': { number: 3, name: 'React Compiler' },
+  '/reference/rsc': { number: 4, name: 'React Server Components' },
+  '/reference/rules': { number: 5, name: 'Rules of React' }
+};
+
+const SECTION_PRIORITY = {
+  'overview': 1,
+  'hooks': 2,
+  'components': 3,
+  'apis': 4,
+  'client': 5,
+  'server': 6
+};
+
+function getChapterInfo(href) {
+  const pathParts = href.split('/').filter(p => p);
+  
+  if (pathParts.length < 2) return null;
+  
+  const chapterPath = `/${pathParts[0]}/${pathParts[1]}`;
+  const chapter = CHAPTER_MAPPING[chapterPath];
+  
+  if (!chapter) {
+    return { number: 99, name: 'Other' };
+  }
+  
+  return chapter;
+}
+
+function getSectionPriority(text) {
+  const lowerText = text.toLowerCase();
+  
+  for (const [keyword, priority] of Object.entries(SECTION_PRIORITY)) {
+    if (lowerText.includes(keyword)) {
+      return priority;
+    }
+  }
+  
+  return 1000 + lowerText.charCodeAt(0);
+}
+
+function cleanTitle(text) {
+  return text
+    .replace(/[^a-zA-Z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+}
+
+function organizeLinks(links) {
+  const chapters = {};
+  
+  links.forEach(link => {
+    const chapterInfo = getChapterInfo(link.href);
+    if (!chapterInfo) return;
+    
+    const chapterNum = chapterInfo.number;
+    if (!chapters[chapterNum]) {
+      chapters[chapterNum] = {
+        info: chapterInfo,
+        sections: []
+      };
+    }
+    
+    chapters[chapterNum].sections.push({
+      ...link,
+      priority: getSectionPriority(link.text)
+    });
+  });
+  
+  Object.values(chapters).forEach(chapter => {
+    chapter.sections.sort((a, b) => {
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority;
+      }
+      return a.text.localeCompare(b.text);
+    });
+  });
+  
+  return chapters;
+}
+
+function generateChapterSectionFilename(link, organizedLinks) {
+  const chapterInfo = getChapterInfo(link.href);
+  if (!chapterInfo) {
+    return cleanTitle(link.text);
+  }
+  
+  const chapter = organizedLinks[chapterInfo.number];
+  if (!chapter) {
+    return cleanTitle(link.text);
+  }
+  
+  const sectionIndex = chapter.sections.findIndex(section => 
+    section.href === link.href
+  );
+  
+  if (sectionIndex === -1) {
+    return cleanTitle(link.text);
+  }
+  
+  const chapterNum = String(chapterInfo.number).padStart(2, '0');
+  const sectionNum = String(sectionIndex + 1).padStart(2, '0');
+  const title = cleanTitle(link.text);
+  
+  return `${chapterNum}-${sectionNum}-${title}`;
+}
+
 class Logger {
   static info(msg) {
     console.log(`[INFO] ${new Date().toISOString()} - ${msg}`);
@@ -46,6 +159,7 @@ class HTMLDownloader {
   constructor() {
     this.browser = null;
     this.pages = [];
+    this.organizedLinks = null;
   }
 
   async initBrowser() {
@@ -96,7 +210,12 @@ class HTMLDownloader {
       const content = await fs.readFile(filePath, 'utf8');
       const links = JSON.parse(content);
       
+      // Organize links for proper naming
+      this.organizedLinks = organizeLinks(links);
+      
       Logger.success(`Loaded ${links.length} links for processing`);
+      Logger.info(`Organized into ${Object.keys(this.organizedLinks).length} chapters`);
+      
       return links;
     } catch (error) {
       Logger.error(`Failed to load links: ${error.message}`);
@@ -122,8 +241,8 @@ class HTMLDownloader {
         throw new Error('Content too short or empty');
       }
       
-      // Generate filename from URL path
-      const filename = this.generateFilename(link.href, link.text);
+      // Generate filename using new chapter-section naming
+      const filename = generateChapterSectionFilename(link, this.organizedLinks);
       const filepath = path.join(HTML_DIR, `${filename}.html`);
       
       await fs.writeFile(filepath, htmlContent, 'utf8');
@@ -143,6 +262,7 @@ class HTMLDownloader {
       return null;
     }
   }
+  // Legacy filename generation - kept for compatibility
   generateFilename(href, text) {
     let filename = href.replace(/^\//, '').replace(/\//g, '_');
     

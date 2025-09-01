@@ -8,6 +8,7 @@
 
 import { spawn } from 'child_process';
 import path from 'path';
+import fs from 'fs/promises';
 
 const SCRIPTS_DIR = './scripts';
 
@@ -24,8 +25,114 @@ class Logger {
     console.log(`[ERROR] ${new Date().toISOString()} - ${msg}`);
   }
   
+  static step(msg) {
+    console.log(`[STEP] ${new Date().toISOString()} - ${msg}`);
+  }
+  
   static phase(number, name) {
     console.log(`\n=== PHASE ${number}: ${name.toUpperCase()} ===`);
+  }
+}
+
+// Cleanup Functions
+async function removeDirectory(dirPath) {
+  try {
+    const stats = await fs.stat(dirPath);
+    if (stats.isDirectory()) {
+      const files = await fs.readdir(dirPath);
+      
+      await Promise.all(files.map(async (file) => {
+        const filePath = path.join(dirPath, file);
+        const fileStats = await fs.stat(filePath);
+        
+        if (fileStats.isDirectory()) {
+          await removeDirectory(filePath);
+        } else {
+          await fs.unlink(filePath);
+        }
+      }));
+      
+      await fs.rmdir(dirPath);
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+}
+
+async function removeFilesByPattern(dirPath, patterns) {
+  try {
+    const files = await fs.readdir(dirPath);
+    let removedCount = 0;
+    
+    for (const file of files) {
+      const shouldRemove = patterns.some(pattern => {
+        if (typeof pattern === 'string') {
+          return file.includes(pattern);
+        }
+        if (pattern instanceof RegExp) {
+          return pattern.test(file);
+        }
+        return false;
+      });
+      
+      if (shouldRemove) {
+        await fs.unlink(path.join(dirPath, file));
+        removedCount++;
+        Logger.step(`Removed: ${file}`);
+      }
+    }
+    
+    return removedCount;
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      throw error;
+    }
+    return 0;
+  }
+}
+
+async function ensureCleanDirectories(outputDir = './scripts/output') {
+  Logger.step('Starting cleanup of old crawling results');
+  
+  try {
+    // Remove HTML and markdown directories completely
+    const htmlDir = path.join(outputDir, 'html');
+    const markdownDir = path.join(outputDir, 'markdown');
+    
+    Logger.step('Removing HTML directory');
+    await removeDirectory(htmlDir);
+    Logger.success('HTML directory cleaned');
+    
+    Logger.step('Removing markdown directory');
+    await removeDirectory(markdownDir);
+    Logger.success('Markdown directory cleaned');
+    
+    // Remove old timestamp files
+    const timestampPatterns = [
+      'react-reference-links-',
+      'react-reference-sidebar-',
+      'react-reference-full-',
+      'download-summary-'
+    ];
+    
+    Logger.step('Removing old timestamp files');
+    const removedFiles = await removeFilesByPattern(outputDir, timestampPatterns);
+    Logger.success(`Removed ${removedFiles} old timestamp files`);
+    
+    // Recreate necessary directories
+    const htmlDirPath = path.join(outputDir, 'html');
+    const markdownDirPath = path.join(outputDir, 'markdown');
+    
+    await fs.mkdir(outputDir, { recursive: true });
+    await fs.mkdir(htmlDirPath, { recursive: true });
+    await fs.mkdir(markdownDirPath, { recursive: true });
+    
+    Logger.success('Cleanup completed successfully');
+  } catch (error) {
+    Logger.error(`Cleanup failed: ${error.message}`);
+    throw error;
   }
 }
 
@@ -72,6 +179,17 @@ async function runScript(scriptPath, phaseName) {
 
 async function main() {
   Logger.info('Starting React Documentation Scraper - Full Pipeline');
+  
+  // Clean old results before starting
+  try {
+    Logger.phase(0, 'Cleanup Old Results');
+    Logger.info('Removing old crawling results and preparing clean directories');
+    await ensureCleanDirectories('./scripts/output');
+    Logger.success('Cleanup completed successfully');
+  } catch (error) {
+    Logger.error(`Cleanup failed: ${error.message}`);
+    process.exit(1);
+  }
   
   const phases = [
     {
