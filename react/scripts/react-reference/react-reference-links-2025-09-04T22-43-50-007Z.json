@@ -1,0 +1,608 @@
+[
+  {
+    "href": "/reference/react",
+    "title": "Overview",
+    "text": "Overview",
+    "fullUrl": "https://react.dev/reference/react"
+  },
+  {
+    "href": "/reference/react/hooks",
+    "title": "Hooks",
+    "text": "Hooks",
+    "fullUrl": "https://react.dev/reference/react/hooks"
+  },
+  {
+    "href": "/reference/react/useActionState",
+    "title": "useActionState",
+    "text": "useActionState",
+    "fullUrl": "https://react.dev/reference/react/useActionState"
+  },
+  {
+    "href": "/reference/react/useCallback",
+    "title": "useCallback",
+    "text": "useCallback",
+    "fullUrl": "https://react.dev/reference/react/useCallback"
+  },
+  {
+    "href": "/reference/react/useContext",
+    "title": "useContext",
+    "text": "useContext",
+    "fullUrl": "https://react.dev/reference/react/useContext"
+  },
+  {
+    "href": "/reference/react/useDebugValue",
+    "title": "useDebugValue",
+    "text": "useDebugValue",
+    "fullUrl": "https://react.dev/reference/react/useDebugValue"
+  },
+  {
+    "href": "/reference/react/useDeferredValue",
+    "title": "useDeferredValue",
+    "text": "useDeferredValue",
+    "fullUrl": "https://react.dev/reference/react/useDeferredValue"
+  },
+  {
+    "href": "/reference/react/useEffect",
+    "title": "useEffect",
+    "text": "useEffect",
+    "fullUrl": "https://react.dev/reference/react/useEffect"
+  },
+  {
+    "href": "/reference/react/useId",
+    "title": "useId",
+    "text": "useId",
+    "fullUrl": "https://react.dev/reference/react/useId"
+  },
+  {
+    "href": "/reference/react/useImperativeHandle",
+    "title": "useImperativeHandle",
+    "text": "useImperativeHandle",
+    "fullUrl": "https://react.dev/reference/react/useImperativeHandle"
+  },
+  {
+    "href": "/reference/react/useInsertionEffect",
+    "title": "useInsertionEffect",
+    "text": "useInsertionEffect",
+    "fullUrl": "https://react.dev/reference/react/useInsertionEffect"
+  },
+  {
+    "href": "/reference/react/useLayoutEffect",
+    "title": "useLayoutEffect",
+    "text": "useLayoutEffect",
+    "fullUrl": "https://react.dev/reference/react/useLayoutEffect"
+  },
+  {
+    "href": "/reference/react/useMemo",
+    "title": "useMemo",
+    "text": "useMemo",
+    "fullUrl": "https://react.dev/reference/react/useMemo"
+  },
+  {
+    "href": "/reference/react/useOptimistic",
+    "title": "useOptimistic",
+    "text": "useOptimistic",
+    "fullUrl": "https://react.dev/reference/react/useOptimistic"
+  },
+  {
+    "href": "/reference/react/useReducer",
+    "title": "useReducer",
+    "text": "useReducer",
+    "fullUrl": "https://react.dev/reference/react/useReducer"
+  },
+  {
+    "href": "/reference/react/useRef",
+    "title": "useRef",
+    "text": "useRef",
+    "fullUrl": "https://react.dev/reference/react/useRef"
+  },
+  {
+    "href": "/reference/react/useState",
+    "title": "useState",
+    "text": "useState",
+    "fullUrl": "https://react.dev/reference/react/useState"
+  },
+  {
+    "href": "/reference/react/useSyncExternalStore",
+    "title": "useSyncExternalStore",
+    "text": "useSyncExternalStore",
+    "fullUrl": "https://react.dev/reference/react/useSyncExternalStore"
+  },
+  {
+    "href": "/reference/react/useTransition",
+    "title": "useTransition",
+    "text": "useTransition",
+    "fullUrl": "https://react.dev/reference/react/useTransition"
+  },
+  {
+    "href": "/reference/react/components",
+    "title": "Components",
+    "text": "Components",
+    "fullUrl": "https://react.dev/reference/react/components"
+  },
+  {
+    "href": "/reference/react/Fragment",
+    "title": "<Fragment> (<>)",
+    "text": "<Fragment> (<>)",
+    "fullUrl": "https://react.dev/reference/react/Fragment"
+  },
+  {
+    "href": "/reference/react/Profiler",
+    "title": "<Profiler>",
+    "text": "<Profiler>",
+    "fullUrl": "https://react.dev/reference/react/Profiler"
+  },
+  {
+    "href": "/reference/react/StrictMode",
+    "title": "<StrictMode>",
+    "text": "<StrictMode>",
+    "fullUrl": "https://react.dev/reference/react/StrictMode"
+  },
+  {
+    "href": "/reference/react/Suspense",
+    "title": "<Suspense>",
+    "text": "<Suspense>",
+    "fullUrl": "https://react.dev/reference/react/Suspense"
+  },
+  {
+    "href": "/reference/react/Activity",
+    "title": "<Activity>",
+    "text": "<Activity>  - This feature is available in the latest Experimental version of React",
+    "fullUrl": "https://react.dev/reference/react/Activity"
+  },
+  {
+    "href": "/reference/react/ViewTransition",
+    "title": "<ViewTransition>",
+    "text": "<ViewTransition>  - This feature is available in the latest Experimental version of React",
+    "fullUrl": "https://react.dev/reference/react/ViewTransition"
+  },
+  {
+    "href": "/reference/react/apis",
+    "title": "APIs",
+    "text": "APIs",
+    "fullUrl": "https://react.dev/reference/react/apis"
+  },
+  {
+    "href": "/reference/react/act",
+    "title": "act",
+    "text": "act",
+    "fullUrl": "https://react.dev/reference/react/act"
+  },
+  {
+    "href": "/reference/react/cache",
+    "title": "cache",
+    "text": "cache",
+    "fullUrl": "https://react.dev/reference/react/cache"
+  },
+  {
+    "href": "/reference/react/captureOwnerStack",
+    "title": "captureOwnerStack",
+    "text": "captureOwnerStack",
+    "fullUrl": "https://react.dev/reference/react/captureOwnerStack"
+  },
+  {
+    "href": "/reference/react/createContext",
+    "title": "createContext",
+    "text": "createContext",
+    "fullUrl": "https://react.dev/reference/react/createContext"
+  },
+  {
+    "href": "/reference/react/lazy",
+    "title": "lazy",
+    "text": "lazy",
+    "fullUrl": "https://react.dev/reference/react/lazy"
+  },
+  {
+    "href": "/reference/react/memo",
+    "title": "memo",
+    "text": "memo",
+    "fullUrl": "https://react.dev/reference/react/memo"
+  },
+  {
+    "href": "/reference/react/startTransition",
+    "title": "startTransition",
+    "text": "startTransition",
+    "fullUrl": "https://react.dev/reference/react/startTransition"
+  },
+  {
+    "href": "/reference/react/use",
+    "title": "use",
+    "text": "use",
+    "fullUrl": "https://react.dev/reference/react/use"
+  },
+  {
+    "href": "/reference/react/experimental_taintObjectReference",
+    "title": "experimental_taintObjectReference",
+    "text": "experimental_taintObjectReference  - This feature is available in the latest Experimental version of React",
+    "fullUrl": "https://react.dev/reference/react/experimental_taintObjectReference"
+  },
+  {
+    "href": "/reference/react/experimental_taintUniqueValue",
+    "title": "experimental_taintUniqueValue",
+    "text": "experimental_taintUniqueValue  - This feature is available in the latest Experimental version of React",
+    "fullUrl": "https://react.dev/reference/react/experimental_taintUniqueValue"
+  },
+  {
+    "href": "/reference/react/addTransitionType",
+    "title": "unstable_addTransitionType",
+    "text": "unstable_addTransitionType  - This feature is available in the latest Experimental version of React",
+    "fullUrl": "https://react.dev/reference/react/addTransitionType"
+  },
+  {
+    "href": "/reference/react-dom/hooks",
+    "title": "Hooks",
+    "text": "Hooks",
+    "fullUrl": "https://react.dev/reference/react-dom/hooks"
+  },
+  {
+    "href": "/reference/react-dom/hooks/useFormStatus",
+    "title": "useFormStatus",
+    "text": "useFormStatus",
+    "fullUrl": "https://react.dev/reference/react-dom/hooks/useFormStatus"
+  },
+  {
+    "href": "/reference/react-dom/components",
+    "title": "Components",
+    "text": "Components",
+    "fullUrl": "https://react.dev/reference/react-dom/components"
+  },
+  {
+    "href": "/reference/react-dom/components/common",
+    "title": "Common (e.g. <div>)",
+    "text": "Common (e.g. <div>)",
+    "fullUrl": "https://react.dev/reference/react-dom/components/common"
+  },
+  {
+    "href": "/reference/react-dom/components/form",
+    "title": "<form>",
+    "text": "<form>",
+    "fullUrl": "https://react.dev/reference/react-dom/components/form"
+  },
+  {
+    "href": "/reference/react-dom/components/input",
+    "title": "<input>",
+    "text": "<input>",
+    "fullUrl": "https://react.dev/reference/react-dom/components/input"
+  },
+  {
+    "href": "/reference/react-dom/components/option",
+    "title": "<option>",
+    "text": "<option>",
+    "fullUrl": "https://react.dev/reference/react-dom/components/option"
+  },
+  {
+    "href": "/reference/react-dom/components/progress",
+    "title": "<progress>",
+    "text": "<progress>",
+    "fullUrl": "https://react.dev/reference/react-dom/components/progress"
+  },
+  {
+    "href": "/reference/react-dom/components/select",
+    "title": "<select>",
+    "text": "<select>",
+    "fullUrl": "https://react.dev/reference/react-dom/components/select"
+  },
+  {
+    "href": "/reference/react-dom/components/textarea",
+    "title": "<textarea>",
+    "text": "<textarea>",
+    "fullUrl": "https://react.dev/reference/react-dom/components/textarea"
+  },
+  {
+    "href": "/reference/react-dom/components/link",
+    "title": "<link>",
+    "text": "<link>",
+    "fullUrl": "https://react.dev/reference/react-dom/components/link"
+  },
+  {
+    "href": "/reference/react-dom/components/meta",
+    "title": "<meta>",
+    "text": "<meta>",
+    "fullUrl": "https://react.dev/reference/react-dom/components/meta"
+  },
+  {
+    "href": "/reference/react-dom/components/script",
+    "title": "<script>",
+    "text": "<script>",
+    "fullUrl": "https://react.dev/reference/react-dom/components/script"
+  },
+  {
+    "href": "/reference/react-dom/components/style",
+    "title": "<style>",
+    "text": "<style>",
+    "fullUrl": "https://react.dev/reference/react-dom/components/style"
+  },
+  {
+    "href": "/reference/react-dom/components/title",
+    "title": "<title>",
+    "text": "<title>",
+    "fullUrl": "https://react.dev/reference/react-dom/components/title"
+  },
+  {
+    "href": "/reference/react-dom",
+    "title": "APIs",
+    "text": "APIs",
+    "fullUrl": "https://react.dev/reference/react-dom"
+  },
+  {
+    "href": "/reference/react-dom/createPortal",
+    "title": "createPortal",
+    "text": "createPortal",
+    "fullUrl": "https://react.dev/reference/react-dom/createPortal"
+  },
+  {
+    "href": "/reference/react-dom/flushSync",
+    "title": "flushSync",
+    "text": "flushSync",
+    "fullUrl": "https://react.dev/reference/react-dom/flushSync"
+  },
+  {
+    "href": "/reference/react-dom/preconnect",
+    "title": "preconnect",
+    "text": "preconnect",
+    "fullUrl": "https://react.dev/reference/react-dom/preconnect"
+  },
+  {
+    "href": "/reference/react-dom/prefetchDNS",
+    "title": "prefetchDNS",
+    "text": "prefetchDNS",
+    "fullUrl": "https://react.dev/reference/react-dom/prefetchDNS"
+  },
+  {
+    "href": "/reference/react-dom/preinit",
+    "title": "preinit",
+    "text": "preinit",
+    "fullUrl": "https://react.dev/reference/react-dom/preinit"
+  },
+  {
+    "href": "/reference/react-dom/preinitModule",
+    "title": "preinitModule",
+    "text": "preinitModule",
+    "fullUrl": "https://react.dev/reference/react-dom/preinitModule"
+  },
+  {
+    "href": "/reference/react-dom/preload",
+    "title": "preload",
+    "text": "preload",
+    "fullUrl": "https://react.dev/reference/react-dom/preload"
+  },
+  {
+    "href": "/reference/react-dom/preloadModule",
+    "title": "preloadModule",
+    "text": "preloadModule",
+    "fullUrl": "https://react.dev/reference/react-dom/preloadModule"
+  },
+  {
+    "href": "/reference/react-dom/client",
+    "title": "Client APIs",
+    "text": "Client APIs",
+    "fullUrl": "https://react.dev/reference/react-dom/client"
+  },
+  {
+    "href": "/reference/react-dom/client/createRoot",
+    "title": "createRoot",
+    "text": "createRoot",
+    "fullUrl": "https://react.dev/reference/react-dom/client/createRoot"
+  },
+  {
+    "href": "/reference/react-dom/client/hydrateRoot",
+    "title": "hydrateRoot",
+    "text": "hydrateRoot",
+    "fullUrl": "https://react.dev/reference/react-dom/client/hydrateRoot"
+  },
+  {
+    "href": "/reference/react-dom/server",
+    "title": "Server APIs",
+    "text": "Server APIs",
+    "fullUrl": "https://react.dev/reference/react-dom/server"
+  },
+  {
+    "href": "/reference/react-dom/server/renderToPipeableStream",
+    "title": "renderToPipeableStream",
+    "text": "renderToPipeableStream",
+    "fullUrl": "https://react.dev/reference/react-dom/server/renderToPipeableStream"
+  },
+  {
+    "href": "/reference/react-dom/server/renderToReadableStream",
+    "title": "renderToReadableStream",
+    "text": "renderToReadableStream",
+    "fullUrl": "https://react.dev/reference/react-dom/server/renderToReadableStream"
+  },
+  {
+    "href": "/reference/react-dom/server/renderToStaticMarkup",
+    "title": "renderToStaticMarkup",
+    "text": "renderToStaticMarkup",
+    "fullUrl": "https://react.dev/reference/react-dom/server/renderToStaticMarkup"
+  },
+  {
+    "href": "/reference/react-dom/server/renderToString",
+    "title": "renderToString",
+    "text": "renderToString",
+    "fullUrl": "https://react.dev/reference/react-dom/server/renderToString"
+  },
+  {
+    "href": "/reference/react-dom/static",
+    "title": "Static APIs",
+    "text": "Static APIs",
+    "fullUrl": "https://react.dev/reference/react-dom/static"
+  },
+  {
+    "href": "/reference/react-dom/static/prerender",
+    "title": "prerender",
+    "text": "prerender",
+    "fullUrl": "https://react.dev/reference/react-dom/static/prerender"
+  },
+  {
+    "href": "/reference/react-dom/static/prerenderToNodeStream",
+    "title": "prerenderToNodeStream",
+    "text": "prerenderToNodeStream",
+    "fullUrl": "https://react.dev/reference/react-dom/static/prerenderToNodeStream"
+  },
+  {
+    "href": "/reference/react-compiler/configuration",
+    "title": "Configuration",
+    "text": "Configuration",
+    "fullUrl": "https://react.dev/reference/react-compiler/configuration"
+  },
+  {
+    "href": "/reference/react-compiler/compilationMode",
+    "title": "compilationMode",
+    "text": "compilationMode",
+    "fullUrl": "https://react.dev/reference/react-compiler/compilationMode"
+  },
+  {
+    "href": "/reference/react-compiler/gating",
+    "title": "gating",
+    "text": "gating",
+    "fullUrl": "https://react.dev/reference/react-compiler/gating"
+  },
+  {
+    "href": "/reference/react-compiler/logger",
+    "title": "logger",
+    "text": "logger",
+    "fullUrl": "https://react.dev/reference/react-compiler/logger"
+  },
+  {
+    "href": "/reference/react-compiler/panicThreshold",
+    "title": "panicThreshold",
+    "text": "panicThreshold",
+    "fullUrl": "https://react.dev/reference/react-compiler/panicThreshold"
+  },
+  {
+    "href": "/reference/react-compiler/target",
+    "title": "target",
+    "text": "target",
+    "fullUrl": "https://react.dev/reference/react-compiler/target"
+  },
+  {
+    "href": "/reference/react-compiler/directives",
+    "title": "Directives",
+    "text": "Directives",
+    "fullUrl": "https://react.dev/reference/react-compiler/directives"
+  },
+  {
+    "href": "/reference/react-compiler/directives/use-memo",
+    "title": "\"use memo\"",
+    "text": "\"use memo\"",
+    "fullUrl": "https://react.dev/reference/react-compiler/directives/use-memo"
+  },
+  {
+    "href": "/reference/react-compiler/directives/use-no-memo",
+    "title": "\"use no memo\"",
+    "text": "\"use no memo\"",
+    "fullUrl": "https://react.dev/reference/react-compiler/directives/use-no-memo"
+  },
+  {
+    "href": "/reference/react-compiler/compiling-libraries",
+    "title": "Compiling Libraries",
+    "text": "Compiling Libraries",
+    "fullUrl": "https://react.dev/reference/react-compiler/compiling-libraries"
+  },
+  {
+    "href": "/reference/rules",
+    "title": "Overview",
+    "text": "Overview",
+    "fullUrl": "https://react.dev/reference/rules"
+  },
+  {
+    "href": "/reference/rules/components-and-hooks-must-be-pure",
+    "title": "Components and Hooks must be pure",
+    "text": "Components and Hooks must be pure",
+    "fullUrl": "https://react.dev/reference/rules/components-and-hooks-must-be-pure"
+  },
+  {
+    "href": "/reference/rules/react-calls-components-and-hooks",
+    "title": "React calls Components and Hooks",
+    "text": "React calls Components and Hooks",
+    "fullUrl": "https://react.dev/reference/rules/react-calls-components-and-hooks"
+  },
+  {
+    "href": "/reference/rules/rules-of-hooks",
+    "title": "Rules of Hooks",
+    "text": "Rules of Hooks",
+    "fullUrl": "https://react.dev/reference/rules/rules-of-hooks"
+  },
+  {
+    "href": "/reference/rsc/server-components",
+    "title": "Server Components",
+    "text": "Server Components",
+    "fullUrl": "https://react.dev/reference/rsc/server-components"
+  },
+  {
+    "href": "/reference/rsc/server-functions",
+    "title": "Server Functions",
+    "text": "Server Functions",
+    "fullUrl": "https://react.dev/reference/rsc/server-functions"
+  },
+  {
+    "href": "/reference/rsc/directives",
+    "title": "Directives",
+    "text": "Directives",
+    "fullUrl": "https://react.dev/reference/rsc/directives"
+  },
+  {
+    "href": "/reference/rsc/use-client",
+    "title": "'use client'",
+    "text": "'use client'",
+    "fullUrl": "https://react.dev/reference/rsc/use-client"
+  },
+  {
+    "href": "/reference/rsc/use-server",
+    "title": "'use server'",
+    "text": "'use server'",
+    "fullUrl": "https://react.dev/reference/rsc/use-server"
+  },
+  {
+    "href": "/reference/react/legacy",
+    "title": "Legacy React APIs",
+    "text": "Legacy React APIs",
+    "fullUrl": "https://react.dev/reference/react/legacy"
+  },
+  {
+    "href": "/reference/react/Children",
+    "title": "Children",
+    "text": "Children",
+    "fullUrl": "https://react.dev/reference/react/Children"
+  },
+  {
+    "href": "/reference/react/cloneElement",
+    "title": "cloneElement",
+    "text": "cloneElement",
+    "fullUrl": "https://react.dev/reference/react/cloneElement"
+  },
+  {
+    "href": "/reference/react/Component",
+    "title": "Component",
+    "text": "Component",
+    "fullUrl": "https://react.dev/reference/react/Component"
+  },
+  {
+    "href": "/reference/react/createElement",
+    "title": "createElement",
+    "text": "createElement",
+    "fullUrl": "https://react.dev/reference/react/createElement"
+  },
+  {
+    "href": "/reference/react/createRef",
+    "title": "createRef",
+    "text": "createRef",
+    "fullUrl": "https://react.dev/reference/react/createRef"
+  },
+  {
+    "href": "/reference/react/forwardRef",
+    "title": "forwardRef",
+    "text": "forwardRef",
+    "fullUrl": "https://react.dev/reference/react/forwardRef"
+  },
+  {
+    "href": "/reference/react/isValidElement",
+    "title": "isValidElement",
+    "text": "isValidElement",
+    "fullUrl": "https://react.dev/reference/react/isValidElement"
+  },
+  {
+    "href": "/reference/react/PureComponent",
+    "title": "PureComponent",
+    "text": "PureComponent",
+    "fullUrl": "https://react.dev/reference/react/PureComponent"
+  }
+]

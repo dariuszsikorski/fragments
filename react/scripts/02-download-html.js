@@ -10,8 +10,8 @@ import puppeteer from 'puppeteer';
 import fs from 'fs/promises';
 import path from 'path';
 
-const OUTPUT_DIR = './scripts/react-reference';
-const HTML_DIR = './scripts/react-reference/html';
+const OUTPUT_DIR = './react-reference';
+const HTML_DIR = './react-reference/html';
 const CONCURRENT_LIMIT = 10;
 const DELAY_BETWEEN_BATCHES = 2000;
 

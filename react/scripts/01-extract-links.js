@@ -12,7 +12,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const TARGET_URL = 'https://react.dev/reference';
-const OUTPUT_DIR = './scripts/react-reference';
+const OUTPUT_DIR = './react-reference';
 
 class Logger {
   static info(msg) {
