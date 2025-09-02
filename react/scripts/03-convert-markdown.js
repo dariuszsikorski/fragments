@@ -12,9 +12,9 @@ import TurndownService from 'turndown';
 import fs from 'fs/promises';
 import path from 'path';
 
-const OUTPUT_DIR = './scripts/output';
-const HTML_DIR = './scripts/output/html';
-const MARKDOWN_DIR = './scripts/output/markdown';
+const OUTPUT_DIR = './scripts/react-reference';
+const HTML_DIR = './scripts/react-reference/html';
+const MARKDOWN_DIR = './scripts/react-reference/markdown';
 const CONCURRENT_LIMIT = 10;
 
 // Naming Functions

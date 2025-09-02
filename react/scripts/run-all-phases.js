@@ -93,7 +93,7 @@ async function removeFilesByPattern(dirPath, patterns) {
   }
 }
 
-async function ensureCleanDirectories(outputDir = './scripts/output') {
+async function ensureCleanDirectories(outputDir = './scripts/react-reference') {
   Logger.step('Starting cleanup of old crawling results');
   
   try {
@@ -184,7 +184,7 @@ async function main() {
   try {
     Logger.phase(0, 'Cleanup Old Results');
     Logger.info('Removing old crawling results and preparing clean directories');
-    await ensureCleanDirectories('./scripts/output');
+    await ensureCleanDirectories('./scripts/react-reference');
     Logger.success('Cleanup completed successfully');
   } catch (error) {
     Logger.error(`Cleanup failed: ${error.message}`);
@@ -227,8 +227,8 @@ async function main() {
     console.log('✓ Sidebar links extracted → JSON');
     console.log('✓ HTML pages downloaded → /html'); 
     console.log('✓ Markdown files generated → /markdown');
-    console.log('\nCheck: ./scripts/output/markdown/ for generated documentation');
-    console.log('Open: ./scripts/output/markdown/INDEX.md for navigation');
+    console.log('\nCheck: ./scripts/react-reference/markdown/ for generated documentation');
+    console.log('Open: ./scripts/react-reference/markdown/INDEX.md for navigation');
     
   } catch (error) {
     Logger.error(`Pipeline failed: ${error.message}`);
