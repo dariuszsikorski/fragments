@@ -10,7 +10,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs/promises';
 
-const SCRIPTS_DIR = './scripts';
+const SCRIPTS_DIR = '.';
 
 class Logger {
   static info(msg) {
