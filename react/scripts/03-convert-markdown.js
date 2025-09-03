@@ -2,7 +2,7 @@
 
 /**
  * Phase 3: Convert to Markdown  
- * Converts HTML files to markdown using Mozilla Reader Mode + Turndown (10 concurrent)
+ * Converts HTML files to markdown using Mozilla Reader Mode + Turndown (20 concurrent)
  * Input: /html/*.html files | Output: /markdown/*.md files + INDEX.md
  */
 
@@ -15,7 +15,7 @@ import path from 'path';
 const OUTPUT_DIR = './react-reference';
 const HTML_DIR = './react-reference/html';
 const MARKDOWN_DIR = './react-reference/markdown';
-const CONCURRENT_LIMIT = 10;
+const CONCURRENT_LIMIT = 20;
 
 // Naming Functions
 const CHAPTER_MAPPING = {

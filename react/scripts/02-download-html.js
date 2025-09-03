@@ -2,7 +2,7 @@
 
 /**
  * Phase 2: Download HTML Pages
- * Downloads original HTML content from all reference pages (10 concurrent)
+ * Downloads original HTML content from all reference pages (20 concurrent)
  * Input: react-reference-links-*.json | Output: /html/{filename}.html files
  */
 
@@ -12,7 +12,7 @@ import path from 'path';
 
 const OUTPUT_DIR = './react-reference';
 const HTML_DIR = './react-reference/html';
-const CONCURRENT_LIMIT = 10;
+const CONCURRENT_LIMIT = 20;
 const DELAY_BETWEEN_BATCHES = 2000;
 
 // Naming Functions
