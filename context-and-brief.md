@@ -26,15 +26,25 @@ Located in `react/scripts/`:
 - Smart cleanup and error handling
 
 ## Changes Made:
-✅ Updated all output directory references from `./scripts/output` to `./scripts/react-reference`:
-- `run-all-phases.js`: Updated default parameter and result paths
+✅ Updated all output directory references from `./scripts/output` to `./react-reference`:
+- `run-all-phases.js`: Updated default parameter and result paths, fixed SCRIPTS_DIR constant
 - `01-extract-links.js`: Updated OUTPUT_DIR constant  
 - `02-download-html.js`: Updated OUTPUT_DIR and HTML_DIR constants
 - `03-convert-markdown.js`: Updated OUTPUT_DIR, HTML_DIR, and MARKDOWN_DIR constants
 
-## Next Steps:
-- Commit changes using conventional format from commits.txt
-- Test the updated scripts if needed
+✅ Fixed path issues:
+- Corrected SCRIPTS_DIR from './scripts' to '.' (avoiding double scripts path)
+- Fixed all directory references to use './react-reference' instead of './scripts/react-reference'
+
+✅ Tested and verified:
+- Scripts run successfully with new directory structure
+- New `react-reference` folder created and populated correctly at scripts level
+- All 101 React documentation links extracted successfully
+
+## Commits Created:
+- 63fafdf - refactor: output to react-reference folder (2025-09-02 09:55:33)
+- 2c42539 - fix: correct scripts directory path (2025-09-02 15:17:42) 
+- 9bcb29a - fix: correct react-reference path references (2025-09-02 19:28:16)
 
 ## Tech Stack:
 - React with Vite
