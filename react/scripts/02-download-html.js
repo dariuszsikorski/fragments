@@ -9,6 +9,7 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs/promises';
 import path from 'path';
+import crypto from 'crypto';
 
 const OUTPUT_DIR = './react-reference';
 const HTML_DIR = './react-reference/html';
@@ -223,9 +224,33 @@ class HTMLDownloader {
     }
   }
 
+  async checkExistingFile(filepath, newContent) {
+    try {
+      const existingContent = await fs.readFile(filepath, 'utf8');
+      
+      // Compare content length first (fast check)
+      if (existingContent.length !== newContent.length) {
+        return false;
+      }
+      
+      // Compare file hashes for definitive check
+      const existingHash = crypto.createHash('sha256').update(existingContent).digest('hex');
+      const newHash = crypto.createHash('sha256').update(newContent).digest('hex');
+      
+      return existingHash === newHash;
+    } catch (error) {
+      // File doesn't exist or can't be read
+      return false;
+    }
+  }
+
   async downloadSinglePage(page, link, index, total) {
     try {
       Logger.progress(index + 1, total, link.text);
+      
+      // Generate filename first
+      const filename = generateChapterSectionFilename(link, this.organizedLinks);
+      const filepath = path.join(HTML_DIR, `${filename}.html`);
       
       await page.goto(link.fullUrl, { 
         waitUntil: 'networkidle0',
@@ -241,9 +266,19 @@ class HTMLDownloader {
         throw new Error('Content too short or empty');
       }
       
-      // Generate filename using new chapter-section naming
-      const filename = generateChapterSectionFilename(link, this.organizedLinks);
-      const filepath = path.join(HTML_DIR, `${filename}.html`);
+      // Check if file exists and is identical
+      const isIdentical = await this.checkExistingFile(filepath, htmlContent);
+      if (isIdentical) {
+        Logger.success(`Skipped: ${filename}.html (identical content)`);
+        return {
+          filename: `${filename}.html`,
+          filepath,
+          url: link.fullUrl,
+          title: link.text,
+          size: htmlContent.length,
+          skipped: true
+        };
+      }
       
       await fs.writeFile(filepath, htmlContent, 'utf8');
       
@@ -254,7 +289,8 @@ class HTMLDownloader {
         filepath,
         url: link.fullUrl,
         title: link.text,
-        size: htmlContent.length
+        size: htmlContent.length,
+        skipped: false
       };
       
     } catch (error) {
@@ -335,9 +371,11 @@ class HTMLDownloader {
       }
       
       const successCount = allResults.length;
+      const skippedCount = allResults.filter(result => result.skipped).length;
+      const downloadedCount = allResults.filter(result => !result.skipped).length;
       const totalSize = allResults.reduce((sum, result) => sum + result.size, 0);
       
-      Logger.success(`Download completed: ${successCount}/${links.length} pages`);
+      Logger.success(`Download completed: ${successCount}/${links.length} pages (${downloadedCount} downloaded, ${skippedCount} skipped)`);
       Logger.info(`Total HTML size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
       
       // Save download summary
