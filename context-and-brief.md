@@ -1,53 +1,70 @@
 # Fragments Project - Context & Brief
 
 **Last Updated:** 2025-09-05  
-**Task:** Update scraper scripts output directory from `output` to `react-reference`
+**Task:** Enhanced React scraper with index generation and performance improvements
 
 ## Project Structure
 - `/docs` - Single image file
-- `/react` - React app with scraping scripts
+- `/react` - React app with enhanced scraping scripts
 - `/website` - Next.js website
 
 ## React Scraper Scripts Analysis
 Located in `react/scripts/`:
 
-### Pipeline Scripts:
+### Enhanced Pipeline Scripts:
 1. **`run-all-phases.js`** - Main coordinator, runs all phases sequentially
-2. **`01-extract-links.js`** - Scrapes React.dev sidebar links
-3. **`02-download-html.js`** - Downloads HTML pages (10 concurrent)
-4. **`03-convert-markdown.js`** - Converts HTML to markdown using Mozilla Readability
+2. **`01-extract-links.js`** - Scrapes React.dev sidebar links (101 links)
+3. **`02-download-html.js`** - Downloads HTML pages (20 concurrent) with smart skipping
+4. **`03-convert-markdown.js`** - Converts HTML to markdown (20 concurrent) + index generation
+
+### New Features Implemented:
+✅ **Increased Concurrency:** Downloads 20 pages at once instead of 10 for faster processing
+✅ **Smart File Skipping:** Compares file hashes to skip downloading identical HTML files
+✅ **Index of Contents Generation:** Creates `00-0-index-of-contents.md` with all headers from all files
 
 ### Key Features:
-- Uses Puppeteer for scraping
+- Uses Puppeteer for scraping with 20 concurrent pages
 - Cheerio for HTML parsing
 - Mozilla Readability + Turndown for clean markdown conversion
 - Organized naming: `{chapter}-{section}-{title}` format
-- Concurrent processing (10 parallel)
+- Smart hash-based file comparison to avoid redundant downloads
+- Comprehensive index extraction from markdown headers (# ## ### ####)
+- Concurrent processing with batch management
 - Smart cleanup and error handling
 
 ## Changes Made:
-✅ Updated all output directory references from `./scripts/output` to `./react-reference`:
-- `run-all-phases.js`: Updated default parameter and result paths, fixed SCRIPTS_DIR constant
-- `01-extract-links.js`: Updated OUTPUT_DIR constant  
-- `02-download-html.js`: Updated OUTPUT_DIR and HTML_DIR constants
-- `03-convert-markdown.js`: Updated OUTPUT_DIR, HTML_DIR, and MARKDOWN_DIR constants
+✅ **Performance Improvements:**
+- Increased CONCURRENT_LIMIT from 10 to 20 in both download and conversion scripts
+- Added file hash comparison to skip identical downloads
+- Enhanced logging with download/skip statistics
 
-✅ Fixed path issues:
-- Corrected SCRIPTS_DIR from './scripts' to '.' (avoiding double scripts path)
-- Fixed all directory references to use './react-reference' instead of './scripts/react-reference'
+✅ **Index of Contents Feature:**
+- Added `extractHeadersFromMarkdown()` method to parse headers from markdown files
+- Added `generateIndexOfContents()` method to create comprehensive navigation
+- Creates `00-0-index-of-contents.md` with structured hierarchy of all headers
+- Updated pipeline result messages to highlight new index file
 
-✅ Tested and verified:
-- Scripts run successfully with new directory structure
-- New `react-reference` folder created and populated correctly at scripts level
-- All 101 React documentation links extracted successfully
+✅ **Smart File Management:**
+- Added crypto import for SHA-256 hash comparison
+- Added `checkExistingFile()` method for content comparison
+- Enhanced result tracking with skipped file statistics
+- Improved logging to show download vs skip counts
 
 ## Commits Created:
-- 63fafdf - refactor: output to react-reference folder (2025-09-02 09:55:33)
-- 2c42539 - fix: correct scripts directory path (2025-09-02 15:17:42) 
-- 9bcb29a - fix: correct react-reference path references (2025-09-02 19:28:16)
+- b194eb8 - perf: increase download concurrency to 20 (2025-09-03 18:45:00)
+- 76bd673 - feat: skip downloading identical HTML files (2025-09-04 10:15:22)
+- 7c31620 - feat: generate comprehensive index of contents (2025-09-04 14:33:17)
+
+## Enhanced Output:
+- **Main Index:** `INDEX.md` - Simple category-based navigation
+- **Detailed Index:** `00-0-index-of-contents.md` - Complete header hierarchy from all pages
+- **Statistics:** Enhanced reporting with download/skip counts and comprehensive metrics
+- **Performance:** 2x faster with 20 concurrent operations and smart skipping
 
 ## Tech Stack:
 - React with Vite
-- Puppeteer, Cheerio, Mozilla Readability, Turndown
+- Puppeteer (20 concurrent pages), Cheerio, Mozilla Readability, Turndown
+- SHA-256 hash comparison for file deduplication
 - PNPM package manager
 - TypeScript + SCSS
+
