@@ -387,6 +387,107 @@ ${markdown}
     Logger.success(`Index file created: INDEX.md`);
   }
 
+  async extractHeadersFromMarkdown(content) {
+    const lines = content.split('\n');
+    const headers = [];
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('#')) {
+        const match = trimmed.match(/^(#{1,6})\s+(.+)$/);
+        if (match) {
+          const level = match[1].length;
+          const text = match[2].trim();
+          headers.push({ level, text });
+        }
+      }
+    }
+    
+    return headers;
+  }
+
+  async generateIndexOfContents(processedPages) {
+    Logger.step('Generating comprehensive index of contents');
+    
+    const validPages = processedPages.filter(p => p !== null);
+    
+    // Sort pages by filename to maintain order
+    validPages.sort((a, b) => a.filename.localeCompare(b.filename));
+    
+    let tocContent = `---
+title: "React Documentation - Index of Contents"
+generated: ${new Date().toISOString()}
+total_pages: ${validPages.length}
+---
+
+# Index of Contents - React Documentation
+
+> **Complete table of contents with all headers from ${validPages.length} documentation pages**
+> 
+> **Generated:** ${new Date().toISOString()}  
+> **Source:** [React.dev Reference](https://react.dev/reference)
+
+## Navigation
+
+`;
+
+    // Group by chapters for navigation
+    const chapters = {};
+    validPages.forEach(page => {
+      const pathParts = page.path.split('/').filter(p => p);
+      const chapterKey = pathParts.length > 2 ? pathParts[2] : 'other';
+      
+      if (!chapters[chapterKey]) {
+        chapters[chapterKey] = [];
+      }
+      chapters[chapterKey].push(page);
+    });
+
+    // Create chapter navigation
+    Object.keys(chapters).sort().forEach(chapterKey => {
+      const chapterName = chapterKey.charAt(0).toUpperCase() + chapterKey.slice(1);
+      tocContent += `- [${chapterName}](#${chapterKey.toLowerCase()})\n`;
+    });
+
+    tocContent += '\n---\n\n';
+
+    // Process each page to extract headers
+    for (const page of validPages) {
+      try {
+        const markdownPath = path.join(MARKDOWN_DIR, page.filename);
+        const markdownContent = await fs.readFile(markdownPath, 'utf8');
+        const headers = await this.extractHeadersFromMarkdown(markdownContent);
+        
+        if (headers.length > 0) {
+          tocContent += `## ${page.title}\n\n`;
+          tocContent += `> **File:** [\`${page.filename}\`](${page.filename})  \n`;
+          tocContent += `> **URL:** [${page.url}](${page.url})  \n`;
+          tocContent += `> **Path:** \`${page.path}\`\n\n`;
+          
+          headers.forEach(header => {
+            const indent = '  '.repeat(header.level - 1);
+            tocContent += `${indent}- ${header.text}\n`;
+          });
+          
+          tocContent += '\n';
+        }
+      } catch (error) {
+        Logger.error(`Failed to process headers for ${page.filename}: ${error.message}`);
+      }
+    }
+
+    tocContent += `\n---\n\n## Statistics\n\n`;
+    tocContent += `- **Total Pages:** ${validPages.length}\n`;
+    tocContent += `- **Total Word Count:** ${validPages.reduce((sum, page) => sum + page.wordCount, 0).toLocaleString()}\n`;
+    tocContent += `- **Generated:** ${new Date().toISOString()}\n`;
+    tocContent += `- **Source:** React.dev Reference Documentation\n\n`;
+    tocContent += `*This index provides a complete overview of all documentation sections and their hierarchical structure.*\n`;
+
+    const tocPath = path.join(MARKDOWN_DIR, '00-0-index-of-contents.md');
+    await fs.writeFile(tocPath, tocContent, 'utf8');
+    Logger.success(`Comprehensive index of contents created: 00-0-index-of-contents.md`);
+  }
+
   async convertAllPages() {
     try {
       const links = await this.loadLinksFromLatestFile();
@@ -411,6 +512,7 @@ ${markdown}
       }
       
       await this.generateIndexFile(allResults);
+      await this.generateIndexOfContents(allResults);
       
       const successCount = allResults.length;
       const totalWords = allResults.reduce((sum, page) => sum + page.wordCount, 0);
@@ -418,6 +520,7 @@ ${markdown}
       Logger.success(`Conversion completed: ${successCount}/${htmlFiles.length} files`);
       Logger.info(`Total word count: ${totalWords.toLocaleString()} words`);
       Logger.info(`Markdown files saved in: ${MARKDOWN_DIR}`);
+      Logger.info(`Index of contents: ${MARKDOWN_DIR}/00-0-index-of-contents.md`);
       
     } catch (error) {
       Logger.error(`Conversion failed: ${error.message}`);

@@ -227,8 +227,9 @@ async function main() {
     console.log('✓ Sidebar links extracted → JSON');
     console.log('✓ HTML pages downloaded → /html'); 
     console.log('✓ Markdown files generated → /markdown');
+    console.log('✓ Index of contents created → 00-0-index-of-contents.md');
     console.log('\nCheck: ./react-reference/markdown/ for generated documentation');
-    console.log('Open: ./react-reference/markdown/INDEX.md for navigation');
+    console.log('Open: ./react-reference/markdown/00-0-index-of-contents.md for complete navigation');
     
   } catch (error) {
     Logger.error(`Pipeline failed: ${error.message}`);
