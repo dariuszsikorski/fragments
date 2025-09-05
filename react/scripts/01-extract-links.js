@@ -119,35 +119,15 @@ async function scrapeReactReference() {
     // Parse sidebar links using Cheerio
     const parsedLinks = parseSidebarLinks(sidebarContent);
     
-    // Also get full page content for comparison
-    Logger.step('Extracting full page content');
-    const fullContent = await page.content();
-    
-    // Save sidebar content, full content, and parsed links
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    
     await ensureOutputDir();
     
-    const sidebarFile = path.join(OUTPUT_DIR, `react-reference-sidebar-${timestamp}.html`);
-    const fullFile = path.join(OUTPUT_DIR, `react-reference-full-${timestamp}.html`);
-    const linksFile = path.join(OUTPUT_DIR, `react-reference-links-${timestamp}.json`);
-    
-    Logger.step('Writing sidebar content to file');
-    await fs.writeFile(sidebarFile, sidebarContent, 'utf8');
-    
-    Logger.step('Writing full page content to file');
-    await fs.writeFile(fullFile, fullContent, 'utf8');
+    // Only save the essential links JSON file
+    const linksFile = path.join(OUTPUT_DIR, 'react-reference-links.json');
     
     Logger.step('Writing parsed links to JSON file');
     await fs.writeFile(linksFile, JSON.stringify(parsedLinks, null, 2), 'utf8');
     
-    Logger.success(`Sidebar content saved: ${sidebarFile}`);
-    Logger.success(`Full page content saved: ${fullFile}`);
-    Logger.success(`Parsed links saved: ${linksFile}`);
-    
-    // Log content sizes
-    Logger.info(`Sidebar content size: ${sidebarContent.length} characters`);
-    Logger.info(`Full page content size: ${fullContent.length} characters`);
+    Logger.success(`Links saved: react-reference-links.json`);
     Logger.info(`Parsed links count: ${parsedLinks.length} items`);
     
     // Output parsed links as JS object

@@ -193,20 +193,16 @@ class HTMLDownloader {
 
   async loadLinksFromLatestFile() {
     try {
-      Logger.step('Loading links from latest JSON file');
+      Logger.step('Loading links from JSON file');
       
-      const files = await fs.readdir(OUTPUT_DIR);
-      const linkFiles = files.filter(f => f.startsWith('react-reference-links-') && f.endsWith('.json'));
+      const filePath = path.join(OUTPUT_DIR, 'react-reference-links.json');
       
-      if (linkFiles.length === 0) {
+      try {
+        await fs.access(filePath);
+        Logger.info(`Loading links from: react-reference-links.json`);
+      } catch {
         throw new Error('No links JSON file found. Run sidebar scraper first.');
       }
-      
-      linkFiles.sort().reverse();
-      const latestFile = linkFiles[0];
-      const filePath = path.join(OUTPUT_DIR, latestFile);
-      
-      Logger.info(`Loading links from: ${latestFile}`);
       
       const content = await fs.readFile(filePath, 'utf8');
       const links = JSON.parse(content);
@@ -377,13 +373,6 @@ class HTMLDownloader {
       
       Logger.success(`Download completed: ${successCount}/${links.length} pages (${downloadedCount} downloaded, ${skippedCount} skipped)`);
       Logger.info(`Total HTML size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
-      
-      // Save download summary
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const summaryPath = path.join(OUTPUT_DIR, `download-summary-${timestamp}.json`);
-      await fs.writeFile(summaryPath, JSON.stringify(allResults, null, 2), 'utf8');
-      
-      Logger.success(`Download summary saved: download-summary-${timestamp}.json`);
       
     } catch (error) {
       Logger.error(`Bulk download failed: ${error.message}`);

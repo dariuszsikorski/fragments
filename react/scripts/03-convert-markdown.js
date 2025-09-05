@@ -194,20 +194,16 @@ class MarkdownConverter {
 
   async loadLinksFromLatestFile() {
     try {
-      Logger.step('Loading links from latest JSON file');
+      Logger.step('Loading links from JSON file');
       
-      const files = await fs.readdir(OUTPUT_DIR);
-      const linkFiles = files.filter(f => f.startsWith('react-reference-links-') && f.endsWith('.json'));
+      const filePath = path.join(OUTPUT_DIR, 'react-reference-links.json');
       
-      if (linkFiles.length === 0) {
+      try {
+        await fs.access(filePath);
+        Logger.info(`Loading links from: react-reference-links.json`);
+      } catch {
         throw new Error('No links JSON file found');
       }
-      
-      linkFiles.sort().reverse();
-      const latestFile = linkFiles[0];
-      const filePath = path.join(OUTPUT_DIR, latestFile);
-      
-      Logger.info(`Loading links from: ${latestFile}`);
       
       const content = await fs.readFile(filePath, 'utf8');
       const links = JSON.parse(content);
@@ -242,10 +238,29 @@ class MarkdownConverter {
       throw error;
     }
   }
+
+  async shouldSkipConversion(htmlPath, markdownPath) {
+    try {
+      // Check if markdown file exists
+      const markdownStats = await fs.stat(markdownPath);
+      const htmlStats = await fs.stat(htmlPath);
+      
+      // If HTML is newer than markdown, reconvert
+      if (htmlStats.mtime > markdownStats.mtime) {
+        return false;
+      }
+      
+      // If markdown exists and HTML hasn't changed, skip
+      return true;
+    } catch (error) {
+      // If markdown doesn't exist or any error, don't skip
+      return false;
+    }
+  }
+
   async convertSingleFile(htmlFilename, links, index, total) {
     try {
       const htmlPath = path.join(HTML_DIR, htmlFilename);
-      const htmlContent = await fs.readFile(htmlPath, 'utf8');
       
       // Find corresponding link data by matching the chapter-section filename
       const baseFilename = htmlFilename.replace('.html', '');
@@ -257,6 +272,33 @@ class MarkdownConverter {
       }
       
       Logger.progress(index + 1, total, link.text);
+      
+      // Check if we should skip conversion
+      const markdownPath = path.join(MARKDOWN_DIR, `${baseFilename}.md`);
+      const shouldSkip = await this.shouldSkipConversion(htmlPath, markdownPath);
+      
+      if (shouldSkip) {
+        Logger.success(`Skipped: ${baseFilename}.md (already up-to-date)`);
+        
+        // Return basic info for existing file
+        try {
+          const existingContent = await fs.readFile(markdownPath, 'utf8');
+          const wordCount = existingContent.split(/\s+/).length;
+          return {
+            filename: `${baseFilename}.md`,
+            title: link.text,
+            excerpt: '',
+            wordCount: wordCount,
+            url: link.fullUrl,
+            path: link.href,
+            skipped: true
+          };
+        } catch (error) {
+          // If we can't read existing file, proceed with conversion
+        }
+      }
+      
+      const htmlContent = await fs.readFile(htmlPath, 'utf8');
       
       // Apply Mozilla Readability (Reader Mode)
       const dom = new JSDOM(htmlContent, { url: link.fullUrl });
@@ -279,7 +321,6 @@ class MarkdownConverter {
       const markdownWithMeta = this.createMarkdownDocument(article, link, markdown);
       
       // Save markdown file with proper chapter-section naming
-      const markdownPath = path.join(MARKDOWN_DIR, `${baseFilename}.md`);
       await fs.writeFile(markdownPath, markdownWithMeta, 'utf8');
       
       Logger.success(`Converted: ${baseFilename}.md (${markdownWithMeta.length} chars)`);
@@ -290,7 +331,8 @@ class MarkdownConverter {
         excerpt: article.excerpt || '',
         wordCount: markdown.split(/\s+/).length,
         url: link.fullUrl,
-        path: link.href
+        path: link.href,
+        skipped: false
       };
       
     } catch (error) {
@@ -515,9 +557,11 @@ total_pages: ${validPages.length}
       await this.generateIndexOfContents(allResults);
       
       const successCount = allResults.length;
-      const totalWords = allResults.reduce((sum, page) => sum + page.wordCount, 0);
+      const skippedCount = allResults.filter(result => result && result.skipped).length;
+      const convertedCount = allResults.filter(result => result && !result.skipped).length;
+      const totalWords = allResults.reduce((sum, page) => sum + (page ? page.wordCount : 0), 0);
       
-      Logger.success(`Conversion completed: ${successCount}/${htmlFiles.length} files`);
+      Logger.success(`Conversion completed: ${successCount}/${htmlFiles.length} files (${convertedCount} converted, ${skippedCount} skipped)`);
       Logger.info(`Total word count: ${totalWords.toLocaleString()} words`);
       Logger.info(`Markdown files saved in: ${MARKDOWN_DIR}`);
       Logger.info(`Index of contents: ${MARKDOWN_DIR}/00-0-index-of-contents.md`);
