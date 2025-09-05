@@ -448,63 +448,102 @@ ${markdown}
     return headers;
   }
 
+  // Words to filter out (not actual content headers)
+  static FILTER_OUT_WORDS = [
+    'note', 'pitfall', 'deep dive', 'experimental feature', 'deprecated',
+    'under construction', 'warning', 'caution', 'tip', 'info'
+  ];
+
+  isValidHeader(text) {
+    const lowerText = text.toLowerCase().trim();
+    
+    // Filter out common non-content words
+    if (MarkdownConverter.FILTER_OUT_WORDS.some(word => lowerText === word)) {
+      return false;
+    }
+    
+    // Filter out very short headers (likely navigation elements)
+    if (lowerText.length < 3) {
+      return false;
+    }
+    
+    // Keep headers that look like actual content
+    return true;
+  }
+
+  async extractPureHeadersFromMarkdown(content) {
+    const lines = content.split('\n');
+    const headers = [];
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      // Only match lines that start with # (headers)
+      if (trimmed.match(/^#{1,6}\s+.+$/)) {
+        const match = trimmed.match(/^(#{1,6})\s+(.+)$/);
+        if (match) {
+          const level = match[1].length;
+          let text = match[2].trim();
+          
+          // Remove markdown links and other formatting
+          text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); // Remove markdown links
+          text = text.replace(/`([^`]+)`/g, '$1'); // Remove code formatting
+          text = text.replace(/\*\*([^*]+)\*\*/g, '$1'); // Remove bold
+          text = text.replace(/\*([^*]+)\*/g, '$1'); // Remove italic
+          text = text.replace(/~~([^~]+)~~/g, '$1'); // Remove strikethrough
+          
+          if (this.isValidHeader(text)) {
+            headers.push({ level, text });
+          }
+        }
+      }
+    }
+    
+    return headers;
+  }
+
   async generateIndexOfContents(processedPages) {
-    Logger.step('Generating comprehensive index of contents');
+    Logger.step('Generating pure headers index of contents');
     
     const validPages = processedPages.filter(p => p !== null);
     
     // Sort pages by filename to maintain order
     validPages.sort((a, b) => a.filename.localeCompare(b.filename));
     
+    const timestamp = new Date().toISOString();
     let tocContent = `---
-title: "React Documentation - Index of Contents"
-generated: ${new Date().toISOString()}
+title: "React Documentation - Index of Contents (Pure Headers)"
+generated: ${timestamp}
 total_pages: ${validPages.length}
 ---
 
-# Index of Contents - React Documentation
+# Index of Contents - React Documentation (Pure Headers)
 
-> **Complete table of contents with all headers from ${validPages.length} documentation pages**
+> **Complete table of contents with ONLY pure content headers from ${validPages.length} documentation pages**
 > 
-> **Generated:** ${new Date().toISOString()}  
+> **Generated:** ${timestamp}  
 > **Source:** [React.dev Reference](https://react.dev/reference)
+> **Filtered:** Excludes meta-content like "Note", "Pitfall", "Deep Dive", etc.
 
-## Navigation
+---
 
 `;
 
-    // Group by chapters for navigation
-    const chapters = {};
-    validPages.forEach(page => {
-      const pathParts = page.path.split('/').filter(p => p);
-      const chapterKey = pathParts.length > 2 ? pathParts[2] : 'other';
-      
-      if (!chapters[chapterKey]) {
-        chapters[chapterKey] = [];
-      }
-      chapters[chapterKey].push(page);
-    });
-
-    // Create chapter navigation
-    Object.keys(chapters).sort().forEach(chapterKey => {
-      const chapterName = chapterKey.charAt(0).toUpperCase() + chapterKey.slice(1);
-      tocContent += `- [${chapterName}](#${chapterKey.toLowerCase()})\n`;
-    });
-
-    tocContent += '\n---\n\n';
+    let totalHeaders = 0;
 
     // Process each page to extract headers
     for (const page of validPages) {
       try {
         const markdownPath = path.join(MARKDOWN_DIR, page.filename);
         const markdownContent = await fs.readFile(markdownPath, 'utf8');
-        const headers = await this.extractHeadersFromMarkdown(markdownContent);
+        const headers = await this.extractPureHeadersFromMarkdown(markdownContent);
         
         if (headers.length > 0) {
           tocContent += `## ${page.title}\n\n`;
           tocContent += `> **File:** [\`${page.filename}\`](${page.filename})  \n`;
           tocContent += `> **URL:** [${page.url}](${page.url})  \n`;
-          tocContent += `> **Path:** \`${page.path}\`\n\n`;
+          tocContent += `> **Path:** \`${page.path}\`\n`;
+          tocContent += `> **Headers:** ${headers.length}\n\n`;
           
           headers.forEach(header => {
             const indent = '  '.repeat(header.level - 1);
@@ -512,22 +551,27 @@ total_pages: ${validPages.length}
           });
           
           tocContent += '\n';
+          totalHeaders += headers.length;
         }
       } catch (error) {
         Logger.error(`Failed to process headers for ${page.filename}: ${error.message}`);
       }
     }
 
-    tocContent += `\n---\n\n## Statistics\n\n`;
+    tocContent += `---\n\n## Statistics\n\n`;
     tocContent += `- **Total Pages:** ${validPages.length}\n`;
+    tocContent += `- **Total Headers:** ${totalHeaders}\n`;
     tocContent += `- **Total Word Count:** ${validPages.reduce((sum, page) => sum + page.wordCount, 0).toLocaleString()}\n`;
-    tocContent += `- **Generated:** ${new Date().toISOString()}\n`;
-    tocContent += `- **Source:** React.dev Reference Documentation\n\n`;
-    tocContent += `*This index provides a complete overview of all documentation sections and their hierarchical structure.*\n`;
+    tocContent += `- **Generated:** ${timestamp}\n`;
+    tocContent += `- **Source:** React.dev Reference Documentation\n`;
+    tocContent += `- **Format:** Pure Headers Only (# ## ### ####)\n`;
+    tocContent += `- **Filtered Out:** Meta-content, navigation elements, notes\n\n`;
+    tocContent += `*This index contains only content headers for clean documentation navigation.*\n`;
 
     const tocPath = path.join(MARKDOWN_DIR, '00-0-index-of-contents.md');
     await fs.writeFile(tocPath, tocContent, 'utf8');
-    Logger.success(`Comprehensive index of contents created: 00-0-index-of-contents.md`);
+    Logger.success(`Pure headers index of contents created: 00-0-index-of-contents.md`);
+    Logger.info(`Total headers extracted: ${totalHeaders}`);
   }
 
   async convertAllPages() {
