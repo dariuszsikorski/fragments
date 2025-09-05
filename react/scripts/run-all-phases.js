@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Pipeline Runner: All Phases
+ * Pipeline Runner: All Phases (Unified)
  * Executes all 3 phases sequentially: extract links → download HTML → convert markdown
- * Usage: pnpm docs
+ * 
+ * Usage: node run-all-phases-unified.js --mode <reference|learn|both>
  */
 
 import { spawn } from 'child_process';
@@ -11,6 +12,85 @@ import path from 'path';
 import fs from 'fs/promises';
 
 const SCRIPTS_DIR = '.';
+
+// Mode-specific configurations
+const MODE_CONFIGS = {
+  reference: {
+    outputDir: './react-reference',
+    sectionName: 'Reference',
+    description: 'React Reference Documentation',
+    timestampPatterns: [
+      'react-reference-links-',
+      'react-reference-sidebar-',
+      'react-reference-full-',
+      'download-summary-'
+    ]
+  },
+  learn: {
+    outputDir: './react-learn',
+    sectionName: 'Learn',
+    description: 'React Learn Documentation',
+    timestampPatterns: [
+      'react-learn-links-',
+      'react-learn-sidebar-',
+      'react-learn-full-',
+      'download-summary-'
+    ]
+  }
+};
+
+function printUsage() {
+  console.log(`
+Usage: node run-all-phases-unified.js --mode <mode>
+
+Execute the complete React documentation scraping pipeline.
+
+Options:
+  --mode <mode>     Pipeline mode (required)
+                    Available modes: reference, learn, both
+  --help, -h        Show this help message
+
+Examples:
+  node run-all-phases-unified.js --mode reference
+  node run-all-phases-unified.js --mode learn
+  node run-all-phases-unified.js --mode both
+
+Output:
+  reference mode: Processes to ./react-reference/
+  learn mode:     Processes to ./react-learn/
+  both mode:      Processes both sequentially
+
+Pipeline Phases:
+  1. Extract Links:    Scrape sidebar navigation
+  2. Download HTML:    Download original pages (20 concurrent)
+  3. Convert Markdown: Convert to markdown with Mozilla Readability
+`);
+}
+
+function parseArgs() {
+  const args = process.argv.slice(2);
+  
+  if (args.includes('--help') || args.includes('-h')) {
+    printUsage();
+    process.exit(0);
+  }
+  
+  const modeIndex = args.indexOf('--mode');
+  if (modeIndex === -1 || modeIndex === args.length - 1) {
+    console.error('Error: --mode parameter is required');
+    printUsage();
+    process.exit(1);
+  }
+  
+  const mode = args[modeIndex + 1];
+  if (!['reference', 'learn', 'both'].includes(mode)) {
+    console.error(`Error: Invalid mode "${mode}". Available modes: reference, learn, both`);
+    printUsage();
+    process.exit(1);
+  }
+  
+  return { mode };
+}
 
 class Logger {
   static info(msg) {
@@ -31,6 +111,10 @@ class Logger {
   
   static phase(number, name) {
     console.log(`\n=== PHASE ${number}: ${name.toUpperCase()} ===`);
+  }
+  
+  static mode(mode) {
+    console.log(`\n🚀 === PROCESSING MODE: ${mode.toUpperCase()} ===`);
   }
 }
 
@@ -93,7 +177,7 @@ async function removeFilesByPattern(dirPath, patterns) {
   }
 }
 
-async function ensureCleanDirectories(outputDir = './react-reference') {
+async function ensureCleanDirectories(outputDir, timestampPatterns) {
   Logger.step('Starting cleanup of old crawling results');
   
   try {
@@ -110,13 +194,6 @@ async function ensureCleanDirectories(outputDir = './react-reference') {
     Logger.success('Markdown directory cleaned');
     
     // Remove old timestamp files
-    const timestampPatterns = [
-      'react-reference-links-',
-      'react-reference-sidebar-',
-      'react-reference-full-',
-      'download-summary-'
-    ];
-    
     Logger.step('Removing old timestamp files');
     const removedFiles = await removeFilesByPattern(outputDir, timestampPatterns);
     Logger.success(`Removed ${removedFiles} old timestamp files`);
@@ -136,11 +213,12 @@ async function ensureCleanDirectories(outputDir = './react-reference') {
   }
 }
 
-async function runScript(scriptPath, phaseName) {
+async function runScript(scriptPath, phaseName, mode) {
   return new Promise((resolve, reject) => {
     Logger.info(`Starting ${phaseName}`);
     
-    const child = spawn('node', [scriptPath], {
+    const args = mode ? ['--mode', mode] : [];
+    const child = spawn('node', [scriptPath, ...args], {
       stdio: ['inherit', 'pipe', 'pipe'],
       cwd: process.cwd()
     });
@@ -177,38 +255,41 @@ async function runScript(scriptPath, phaseName) {
   });
 }
 
-async function main() {
-  Logger.info('Starting React Documentation Scraper - Full Pipeline');
+async function runSingleMode(mode) {
+  const config = MODE_CONFIGS[mode];
+  
+  Logger.mode(mode);
+  Logger.info(`Starting React ${config.sectionName} Documentation Scraper - Full Pipeline`);
   
   // Clean old results before starting
   try {
     Logger.phase(0, 'Cleanup Old Results');
     Logger.info('Removing old crawling results and preparing clean directories');
-    await ensureCleanDirectories('./react-reference');
+    await ensureCleanDirectories(config.outputDir, config.timestampPatterns);
     Logger.success('Cleanup completed successfully');
   } catch (error) {
     Logger.error(`Cleanup failed: ${error.message}`);
-    process.exit(1);
+    throw error;
   }
   
   const phases = [
     {
       number: 1,
       name: 'Extract Sidebar Links',
-      script: path.join(SCRIPTS_DIR, '01-extract-links.js'),
-      description: 'Scraping sidebar navigation and extracting reference links'
+      script: path.join(SCRIPTS_DIR, '01-extract-links-unified.js'),
+      description: `Scraping sidebar navigation and extracting ${config.sectionName} section links`
     },
     {
       number: 2, 
       name: 'Download HTML Pages',
-      script: path.join(SCRIPTS_DIR, '02-download-html.js'),
-      description: 'Downloading original HTML content from all reference pages (10 concurrent)'
+      script: path.join(SCRIPTS_DIR, '02-download-html-unified.js'),
+      description: `Downloading original HTML content from all ${config.sectionName} pages (20 concurrent)`
     },
     {
       number: 3,
       name: 'Convert to Markdown',
-      script: path.join(SCRIPTS_DIR, '03-convert-markdown.js'), 
-      description: 'Converting HTML files to markdown using Mozilla Reader Mode (10 concurrent)'
+      script: path.join(SCRIPTS_DIR, '03-convert-markdown-unified.js'), 
+      description: `Converting HTML files to markdown using Mozilla Reader Mode (20 concurrent)`
     }
   ];
   
@@ -217,19 +298,67 @@ async function main() {
       Logger.phase(phase.number, phase.name);
       Logger.info(phase.description);
       
-      await runScript(phase.script, phase.name);
+      await runScript(phase.script, phase.name, mode);
       
       Logger.success(`Phase ${phase.number} completed`);
     }
     
-    Logger.success('Full pipeline completed successfully!');
-    console.log('\n=== RESULTS ===');
+    Logger.success(`${config.sectionName} pipeline completed successfully!`);
+    console.log(`\n=== ${mode.toUpperCase()} RESULTS ===`);
     console.log('✓ Sidebar links extracted → JSON');
     console.log('✓ HTML pages downloaded → /html'); 
     console.log('✓ Markdown files generated → /markdown');
     console.log('✓ Index of contents created → 00-0-index-of-contents.md');
-    console.log('\nCheck: ./react-reference/markdown/ for generated documentation');
-    console.log('Open: ./react-reference/markdown/00-0-index-of-contents.md for complete navigation');
+    console.log(`\nCheck: ${config.outputDir}/markdown/ for generated documentation`);
+    console.log(`Open: ${config.outputDir}/markdown/00-0-index-of-contents.md for complete navigation`);
+    
+  } catch (error) {
+    Logger.error(`${config.sectionName} pipeline failed: ${error.message}`);
+    throw error;
+  }
+}
+
+async function runBothModes() {
+  Logger.info('Starting BOTH React Documentation Scrapers - Full Pipeline');
+  
+  try {
+    // Run reference mode first
+    await runSingleMode('reference');
+    
+    console.log('\n' + '='.repeat(80));
+    console.log('REFERENCE MODE COMPLETED - STARTING LEARN MODE');
+    console.log('='.repeat(80));
+    
+    // Run learn mode second
+    await runSingleMode('learn');
+    
+    Logger.success('BOTH pipelines completed successfully!');
+    console.log('\n' + '='.repeat(80));
+    console.log('🎉 === FINAL RESULTS (BOTH MODES) ===');
+    console.log('='.repeat(80));
+    console.log('\n✅ REFERENCE DOCUMENTATION:');
+    console.log('   📁 ./react-reference/markdown/');
+    console.log('   📋 ./react-reference/markdown/00-0-index-of-contents.md');
+    console.log('\n✅ LEARN DOCUMENTATION:');
+    console.log('   📁 ./react-learn/markdown/');
+    console.log('   📋 ./react-learn/markdown/00-0-index-of-contents.md');
+    console.log('\n🚀 Complete React documentation is now available in markdown format!');
+    
+  } catch (error) {
+    Logger.error(`Combined pipeline failed: ${error.message}`);
+    throw error;
+  }
+}
+
+async function main() {
+  const { mode } = parseArgs();
+  
+  try {
+    if (mode === 'both') {
+      await runBothModes();
+    } else {
+      await runSingleMode(mode);
+    }
     
   } catch (error) {
     Logger.error(`Pipeline failed: ${error.message}`);

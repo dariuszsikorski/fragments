@@ -9,7 +9,19 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "docs": "node scripts/run-all-phases.js"
+    
+    "docs": "node scripts/run-all-phases.js",
+    
+    "docs:reference": "node scripts/run-all-phases.js --mode reference",
+    "docs:learn": "node scripts/run-all-phases.js --mode learn",
+    "docs:both": "node scripts/run-all-phases.js --mode both",
+    
+    "docs:extract:reference": "node scripts/01-extract-links.js --mode reference",
+    "docs:extract:learn": "node scripts/01-extract-links.js --mode learn",
+    "docs:download:reference": "node scripts/02-download-html.js --mode reference",
+    "docs:download:learn": "node scripts/02-download-html.js --mode learn",
+    "docs:convert:reference": "node scripts/03-convert-markdown.js --mode reference",
+    "docs:convert:learn": "node scripts/03-convert-markdown.js --mode learn"
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Phase 1: Extract Sidebar Links
- * Scrapes https://react.dev/reference sidebar navigation and extracts 101+ documentation links
- * Output: react-reference-links-{timestamp}.json
+ * Unified Phase 1: Extract Sidebar Links
+ * Scrapes React.dev sidebar navigation for both reference and learn sections
+ * Usage: node 01-extract-links-unified.js --mode reference|learn
+ * Output: react-{mode}-links.json
  */
 
 import puppeteer from 'puppeteer';
@@ -11,29 +12,99 @@ import * as cheerio from 'cheerio';
 import fs from 'fs/promises';
 import path from 'path';
 
-const TARGET_URL = 'https://react.dev/reference';
-const OUTPUT_DIR = './react-reference';
+// Mode Configuration
+const MODE_CONFIGS = {
+  reference: {
+    targetUrl: 'https://react.dev/reference',
+    outputDir: './react-reference',
+    outputFile: 'react-reference-links.json',
+    description: 'React Reference Documentation'
+  },
+  learn: {
+    targetUrl: 'https://react.dev/learn',
+    outputDir: './react-learn', 
+    outputFile: 'react-learn-links.json',
+    description: 'React Learn Documentation'
+  }
+};
+
+function printUsage() {
+  console.log(`
+Usage: node 01-extract-links-unified.js --mode <mode>
+
+Extract sidebar navigation links from React documentation.
+
+Options:
+  --mode <mode>     Extraction mode (required)
+                    Available modes: reference, learn
+  --help, -h        Show this help message
+
+Examples:
+  node 01-extract-links-unified.js --mode reference
+  node 01-extract-links-unified.js --mode learn
+
+Output:
+  reference mode: Creates react-reference-links.json in ./react-reference/
+  learn mode:     Creates react-learn-links.json in ./react-learn/
+
+Features:
+  - Extracts all sidebar navigation links
+  - Handles JavaScript-rendered content
+  - Saves structured JSON output with full URLs
+`);
+}
+
+function parseArguments() {
+  const args = process.argv.slice(2);
+  
+  if (args.includes('--help') || args.includes('-h')) {
+    printUsage();
+    process.exit(0);
+  }
+  
+  const modeIndex = args.indexOf('--mode');
+  
+  if (modeIndex === -1 || modeIndex === args.length - 1) {
+    console.error('Error: --mode parameter is required');
+    printUsage();
+    process.exit(1);
+  }
+  
+  const mode = args[modeIndex + 1];
+  
+  if (!MODE_CONFIGS[mode]) {
+    console.error(`Error: Invalid mode "${mode}". Available modes: ${Object.keys(MODE_CONFIGS).join(', ')}`);
+    printUsage();
+    process.exit(1);
+  }
+  
+  return mode;
+}
 
 class Logger {
-  static info(msg) {
-    console.log(`[INFO] ${new Date().toISOString()} - ${msg}`);
+  constructor(mode) {
+    this.mode = mode.toUpperCase();
   }
   
-  static success(msg) {
-    console.log(`[SUCCESS] ${new Date().toISOString()} - ${msg}`);
+  info(msg) {
+    console.log(`[INFO] [${this.mode}] ${new Date().toISOString()} - ${msg}`);
   }
   
-  static error(msg) {
-    console.log(`[ERROR] ${new Date().toISOString()} - ${msg}`);
+  success(msg) {
+    console.log(`[SUCCESS] [${this.mode}] ${new Date().toISOString()} - ${msg}`);
   }
   
-  static step(msg) {
-    console.log(`[STEP] ${new Date().toISOString()} - ${msg}`);
+  error(msg) {
+    console.log(`[ERROR] [${this.mode}] ${new Date().toISOString()} - ${msg}`);
+  }
+  
+  step(msg) {
+    console.log(`[STEP] [${this.mode}] ${new Date().toISOString()} - ${msg}`);
   }
 }
 
-function parseSidebarLinks(sidebarHtml) {
-  Logger.step('Parsing sidebar HTML with Cheerio');
+function parseSidebarLinks(sidebarHtml, logger) {
+  logger.step('Parsing sidebar HTML with Cheerio');
   
   const $ = cheerio.load(sidebarHtml);
   const links = [];
@@ -56,53 +127,55 @@ function parseSidebarLinks(sidebarHtml) {
     }
   });
   
-  Logger.success(`Extracted ${links.length} links from sidebar`);
+  logger.success(`Extracted ${links.length} links from sidebar`);
   return links;
 }
 
-async function ensureOutputDir() {
+async function ensureOutputDir(outputDir, logger) {
   try {
-    await fs.mkdir(OUTPUT_DIR, { recursive: true });
-    Logger.info('Output directory ready');
+    await fs.mkdir(outputDir, { recursive: true });
+    logger.info('Output directory ready');
   } catch (error) {
-    Logger.error(`Failed to create output directory: ${error.message}`);
+    logger.error(`Failed to create output directory: ${error.message}`);
     throw error;
   }
 }
 
-async function scrapeReactReference() {
+async function scrapeReactDocumentation(mode) {
+  const config = MODE_CONFIGS[mode];
+  const logger = new Logger(mode);
   let browser = null;
   
   try {
-    Logger.step('Starting browser launch');
+    logger.step('Starting browser launch');
     browser = await puppeteer.launch({
       headless: 'new',
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     
-    Logger.success('Browser launched successfully');
+    logger.success('Browser launched successfully');
     
     const page = await browser.newPage();
-    Logger.step('New page created');
+    logger.step('New page created');
     
     // Set viewport for consistent rendering
     await page.setViewport({ width: 1920, height: 1080 });
-    Logger.step('Viewport set to 1920x1080');
+    logger.step('Viewport set to 1920x1080');
     
-    Logger.step(`Navigating to ${TARGET_URL}`);
-    await page.goto(TARGET_URL, { 
+    logger.step(`Navigating to ${config.targetUrl}`);
+    await page.goto(config.targetUrl, { 
       waitUntil: 'networkidle0',
       timeout: 30000 
     });
-    Logger.success('Page loaded successfully');
+    logger.success('Page loaded successfully');
     
     // Wait for JS to fully render
-    Logger.step('Waiting for JavaScript rendering');
+    logger.step('Waiting for JavaScript rendering');
     await page.waitForFunction(() => document.readyState === 'complete');
     await new Promise(resolve => setTimeout(resolve, 3000));
     
     // Extract sidebar navigation specifically
-    Logger.step('Extracting sidebar navigation');
+    logger.step('Extracting sidebar navigation');
     const sidebarContent = await page.evaluate(() => {
       // Look for navigation elements
       const nav = document.querySelector('nav[role="navigation"]');
@@ -110,50 +183,54 @@ async function scrapeReactReference() {
     });
     
     if (!sidebarContent) {
-      Logger.error('Sidebar navigation not found');
+      logger.error('Sidebar navigation not found');
       return;
     }
     
-    Logger.success('Sidebar navigation extracted');
+    logger.success('Sidebar navigation extracted');
     
     // Parse sidebar links using Cheerio
-    const parsedLinks = parseSidebarLinks(sidebarContent);
+    const parsedLinks = parseSidebarLinks(sidebarContent, logger);
     
-    await ensureOutputDir();
+    await ensureOutputDir(config.outputDir, logger);
     
-    // Only save the essential links JSON file
-    const linksFile = path.join(OUTPUT_DIR, 'react-reference-links.json');
+    // Save the essential links JSON file
+    const linksFile = path.join(config.outputDir, config.outputFile);
     
-    Logger.step('Writing parsed links to JSON file');
+    logger.step('Writing parsed links to JSON file');
     await fs.writeFile(linksFile, JSON.stringify(parsedLinks, null, 2), 'utf8');
     
-    Logger.success(`Links saved: react-reference-links.json`);
-    Logger.info(`Parsed links count: ${parsedLinks.length} items`);
+    logger.success(`Links saved: ${config.outputFile}`);
+    logger.info(`Parsed links count: ${parsedLinks.length} items`);
     
     // Output parsed links as JS object
-    console.log('\n=== PARSED SIDEBAR LINKS ===');
+    console.log(`\n=== PARSED SIDEBAR LINKS (${mode.toUpperCase()}) ===`);
     console.log(JSON.stringify(parsedLinks, null, 2));
     
   } catch (error) {
-    Logger.error(`Scraping failed: ${error.message}`);
+    logger.error(`Scraping failed: ${error.message}`);
     throw error;
   } finally {
     if (browser) {
-      Logger.step('Closing browser');
+      logger.step('Closing browser');
       await browser.close();
-      Logger.success('Browser closed');
+      logger.success('Browser closed');
     }
   }
 }
 
 async function main() {
-  Logger.info('Starting React reference scraper');
+  const mode = parseArguments();
+  const config = MODE_CONFIGS[mode];
+  const logger = new Logger(mode);
+  
+  logger.info(`Starting React ${config.description} scraper`);
   
   try {
-    await scrapeReactReference();
-    Logger.success('Scraping completed successfully');
+    await scrapeReactDocumentation(mode);
+    logger.success('Scraping completed successfully');
   } catch (error) {
-    Logger.error(`Script failed: ${error.message}`);
+    logger.error(`Script failed: ${error.message}`);
     process.exit(1);
   }
 }

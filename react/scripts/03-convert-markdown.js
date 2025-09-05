@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * Phase 3: Convert to Markdown  
+ * Phase 3: Convert to Markdown (Unified)
  * Converts HTML files to markdown using Mozilla Reader Mode + Turndown (20 concurrent)
- * Input: /html/*.html files | Output: /markdown/*.md files + INDEX.md
+ * Input: /{mode}/html/*.html files | Output: /{mode}/markdown/*.md files + INDEX.md
+ * 
+ * Usage: node 03-convert-markdown-unified.js --mode <reference|learn>
  */
 
 import { Readability } from '@mozilla/readability';
@@ -12,49 +14,148 @@ import TurndownService from 'turndown';
 import fs from 'fs/promises';
 import path from 'path';
 
-const OUTPUT_DIR = './react-reference';
-const HTML_DIR = './react-reference/html';
-const MARKDOWN_DIR = './react-reference/markdown';
 const CONCURRENT_LIMIT = 20;
 
-// Naming Functions
-const CHAPTER_MAPPING = {
-  '/reference/react': { number: 1, name: 'React Core' },
-  '/reference/react-dom': { number: 2, name: 'React DOM' },
-  '/reference/react-compiler': { number: 3, name: 'React Compiler' },
-  '/reference/rsc': { number: 4, name: 'React Server Components' },
-  '/reference/rules': { number: 5, name: 'Rules of React' }
-};
-
-const SECTION_PRIORITY = {
-  'overview': 1,
-  'hooks': 2,
-  'components': 3,
-  'apis': 4,
-  'client': 5,
-  'server': 6
-};
-
-function getChapterInfo(href) {
-  const pathParts = href.split('/').filter(p => p);
-  
-  if (pathParts.length < 2) return null;
-  
-  const chapterPath = `/${pathParts[0]}/${pathParts[1]}`;
-  const chapter = CHAPTER_MAPPING[chapterPath];
-  
-  if (!chapter) {
-    return { number: 99, name: 'Other' };
+// Mode-specific configurations
+const MODE_CONFIGS = {
+  reference: {
+    outputDir: './react-reference',
+    inputFile: 'react-reference-links.json',
+    chapterMapping: {
+      '/reference/react': { number: 1, name: 'React Core' },
+      '/reference/react-dom': { number: 2, name: 'React DOM' },
+      '/reference/react-compiler': { number: 3, name: 'React Compiler' },
+      '/reference/rsc': { number: 4, name: 'React Server Components' },
+      '/reference/rules': { number: 5, name: 'Rules of React' }
+    },
+    sectionPriority: {
+      'overview': 1,
+      'hooks': 2,
+      'components': 3,
+      'apis': 4,
+      'client': 5,
+      'server': 6
+    }
+  },
+  learn: {
+    outputDir: './react-learn',
+    inputFile: 'react-learn-links.json',
+    chapterMapping: {
+      '/learn': { number: 1, name: 'Get Started' },
+      '/learn/tutorial-tic-tac-toe': { number: 1, name: 'Get Started' },
+      '/learn/thinking-in-react': { number: 1, name: 'Get Started' },
+      '/learn/installation': { number: 1, name: 'Get Started' },
+      '/learn/setup': { number: 1, name: 'Get Started' },
+      '/learn/react-compiler': { number: 1, name: 'Get Started' },
+      '/learn/describing-the-ui': { number: 2, name: 'Learn React' },
+      '/learn/adding-interactivity': { number: 2, name: 'Learn React' },
+      '/learn/managing-state': { number: 2, name: 'Learn React' },
+      '/learn/escape-hatches': { number: 2, name: 'Learn React' }
+    },
+    sectionPriority: {
+      'quick-start': 1,
+      'tutorial': 2,
+      'thinking': 3,
+      'installation': 4,
+      'setup': 5,
+      'compiler': 6,
+      'describing': 7,
+      'adding': 8,
+      'managing': 9,
+      'escape': 10
+    }
   }
-  
-  return chapter;
+};
+
+function printUsage() {
+  console.log(`
+Usage: node 03-convert-markdown-unified.js --mode <mode>
+
+Convert HTML files to markdown using Mozilla Readability and Turndown.
+
+Options:
+  --mode <mode>     Conversion mode (required)
+                    Available modes: reference, learn
+  --help, -h        Show this help message
+
+Examples:
+  node 03-convert-markdown-unified.js --mode reference
+  node 03-convert-markdown-unified.js --mode learn
+
+Output:
+  reference mode: Converts to ./react-reference/markdown/
+  learn mode:     Converts to ./react-learn/markdown/
+
+Features:
+  - Smart skipping (only reconvert if HTML is newer)
+  - Dual index generation (INDEX.md + 00-0-index-of-contents.md)
+  - Pure header extraction with content filtering
+  - Mozilla Readability for clean content extraction
+`);
 }
 
-function getSectionPriority(text) {
-  const lowerText = text.toLowerCase();
+function parseArgs() {
+  const args = process.argv.slice(2);
   
-  for (const [keyword, priority] of Object.entries(SECTION_PRIORITY)) {
-    if (lowerText.includes(keyword)) {
+  if (args.includes('--help') || args.includes('-h')) {
+    printUsage();
+    process.exit(0);
+  }
+  
+  const modeIndex = args.indexOf('--mode');
+  if (modeIndex === -1 || modeIndex === args.length - 1) {
+    console.error('Error: --mode parameter is required');
+    printUsage();
+    process.exit(1);
+  }
+  
+  const mode = args[modeIndex + 1];
+  if (!MODE_CONFIGS[mode]) {
+    console.error(`Error: Invalid mode "${mode}". Available modes: ${Object.keys(MODE_CONFIGS).join(', ')}`);
+    printUsage();
+    process.exit(1);
+  }
+  
+  return { mode };
+}
+
+// Naming Functions
+function getChapterInfo(href, config) {
+  if (config.mode === 'reference') {
+    const pathParts = href.split('/').filter(p => p);
+    
+    if (pathParts.length < 2) return null;
+    
+    const chapterPath = `/${pathParts[0]}/${pathParts[1]}`;
+    const chapter = config.chapterMapping[chapterPath];
+    
+    if (!chapter) {
+      return { number: 99, name: 'Other' };
+    }
+    
+    return chapter;
+  } else {
+    // Learn mode - find the most specific match
+    const exactMatch = config.chapterMapping[href];
+    if (exactMatch) return exactMatch;
+    
+    // Check for partial matches
+    for (const [path, chapter] of Object.entries(config.chapterMapping)) {
+      if (href.startsWith(path)) {
+        return chapter;
+      }
+    }
+    
+    return { number: 99, name: 'Other' };
+  }
+}
+
+function getSectionPriority(text, href, config) {
+  const lowerText = text.toLowerCase();
+  const lowerHref = href ? href.toLowerCase() : '';
+  
+  for (const [keyword, priority] of Object.entries(config.sectionPriority)) {
+    if (lowerText.includes(keyword) || lowerHref.includes(keyword)) {
       return priority;
     }
   }
@@ -71,11 +172,11 @@ function cleanTitle(text) {
     .toLowerCase();
 }
 
-function organizeLinks(links) {
+function organizeLinks(links, config) {
   const chapters = {};
   
   links.forEach(link => {
-    const chapterInfo = getChapterInfo(link.href);
+    const chapterInfo = getChapterInfo(link.href, config);
     if (!chapterInfo) return;
     
     const chapterNum = chapterInfo.number;
@@ -88,7 +189,7 @@ function organizeLinks(links) {
     
     chapters[chapterNum].sections.push({
       ...link,
-      priority: getSectionPriority(link.text)
+      priority: getSectionPriority(link.text, link.href, config)
     });
   });
   
@@ -104,8 +205,8 @@ function organizeLinks(links) {
   return chapters;
 }
 
-function generateChapterSectionFilename(link, organizedLinks) {
-  const chapterInfo = getChapterInfo(link.href);
+function generateChapterSectionFilename(link, organizedLinks, config) {
+  const chapterInfo = getChapterInfo(link.href, config);
   if (!chapterInfo) {
     return cleanTitle(link.text);
   }
@@ -158,7 +259,12 @@ class Logger {
 }
 
 class MarkdownConverter {
-  constructor() {
+  constructor(config) {
+    this.config = config;
+    this.htmlDir = path.join(config.outputDir, 'html');
+    this.markdownDir = path.join(config.outputDir, 'markdown');
+    this.organizedLinks = null;
+    
     this.turndownService = new TurndownService({
       headingStyle: 'atx',
       hr: '---',
@@ -178,13 +284,12 @@ class MarkdownConverter {
         return `\n\n\`\`\`${lang}\n${content.trim()}\n\`\`\`\n\n`;
       }
     });
-    
-    this.organizedLinks = null;
   }
+
   async ensureDirectories() {
     try {
-      await fs.mkdir(OUTPUT_DIR, { recursive: true });
-      await fs.mkdir(MARKDOWN_DIR, { recursive: true });
+      await fs.mkdir(this.config.outputDir, { recursive: true });
+      await fs.mkdir(this.markdownDir, { recursive: true });
       Logger.info('Output directories ready');
     } catch (error) {
       Logger.error(`Failed to create directories: ${error.message}`);
@@ -196,20 +301,20 @@ class MarkdownConverter {
     try {
       Logger.step('Loading links from JSON file');
       
-      const filePath = path.join(OUTPUT_DIR, 'react-reference-links.json');
+      const filePath = path.join(this.config.outputDir, this.config.inputFile);
       
       try {
         await fs.access(filePath);
-        Logger.info(`Loading links from: react-reference-links.json`);
+        Logger.info(`Loading links from: ${this.config.inputFile}`);
       } catch {
-        throw new Error('No links JSON file found');
+        throw new Error(`No links JSON file found: ${this.config.inputFile}`);
       }
       
       const content = await fs.readFile(filePath, 'utf8');
       const links = JSON.parse(content);
       
       // Organize links for proper naming
-      this.organizedLinks = organizeLinks(links);
+      this.organizedLinks = organizeLinks(links, this.config);
       
       Logger.success(`Loaded ${links.length} links for conversion`);
       Logger.info(`Organized into ${Object.keys(this.organizedLinks).length} chapters`);
@@ -224,7 +329,7 @@ class MarkdownConverter {
     try {
       Logger.step('Scanning for downloaded HTML files');
       
-      const files = await fs.readdir(HTML_DIR);
+      const files = await fs.readdir(this.htmlDir);
       const htmlFiles = files.filter(f => f.endsWith('.html'));
       
       if (htmlFiles.length === 0) {
@@ -260,11 +365,11 @@ class MarkdownConverter {
 
   async convertSingleFile(htmlFilename, links, index, total) {
     try {
-      const htmlPath = path.join(HTML_DIR, htmlFilename);
+      const htmlPath = path.join(this.htmlDir, htmlFilename);
       
       // Find corresponding link data by matching the chapter-section filename
       const baseFilename = htmlFilename.replace('.html', '');
-      const link = links.find(l => generateChapterSectionFilename(l, this.organizedLinks) === baseFilename);
+      const link = links.find(l => generateChapterSectionFilename(l, this.organizedLinks, this.config) === baseFilename);
       
       if (!link) {
         Logger.error(`No link data found for: ${htmlFilename}`);
@@ -274,7 +379,7 @@ class MarkdownConverter {
       Logger.progress(index + 1, total, link.text);
       
       // Check if we should skip conversion
-      const markdownPath = path.join(MARKDOWN_DIR, `${baseFilename}.md`);
+      const markdownPath = path.join(this.markdownDir, `${baseFilename}.md`);
       const shouldSkip = await this.shouldSkipConversion(htmlPath, markdownPath);
       
       if (shouldSkip) {
@@ -340,6 +445,7 @@ class MarkdownConverter {
       return null;
     }
   }
+
   createMarkdownDocument(article, link, markdown) {
     const timestamp = new Date().toISOString();
     
@@ -365,7 +471,6 @@ ${markdown}
 `;
   }
 
-
   async processBatch(batch, batchNumber, totalBatches, links) {
     Logger.batch(batchNumber, totalBatches, batch.length);
     
@@ -389,14 +494,16 @@ ${markdown}
     Logger.success(`Batch ${batchNumber}: ${successful.length} files converted successfully`);
     return successful;
   }
+
   async generateIndexFile(processedPages) {
     const validPages = processedPages.filter(p => p !== null);
+    const modeTitle = this.config.mode.charAt(0).toUpperCase() + this.config.mode.slice(1);
     
-    let indexContent = `# React Documentation - Markdown Collection
+    let indexContent = `# React ${modeTitle} Documentation - Markdown Collection
 
 **Generated:** ${new Date().toISOString()}  
 **Total Pages:** ${validPages.length}  
-**Source:** [React.dev Reference](https://react.dev/reference)
+**Source:** [React.dev ${modeTitle}](https://react.dev/${this.config.mode})
 
 ## Table of Contents
 
@@ -424,7 +531,7 @@ ${markdown}
 
     indexContent += `\n---\n*Generated with Mozilla Readability and Turndown*\n`;
 
-    const indexPath = path.join(MARKDOWN_DIR, 'INDEX.md');
+    const indexPath = path.join(this.markdownDir, 'INDEX.md');
     await fs.writeFile(indexPath, indexContent, 'utf8');
     Logger.success(`Index file created: INDEX.md`);
   }
@@ -511,18 +618,20 @@ ${markdown}
     validPages.sort((a, b) => a.filename.localeCompare(b.filename));
     
     const timestamp = new Date().toISOString();
+    const modeTitle = this.config.mode.charAt(0).toUpperCase() + this.config.mode.slice(1);
+    
     let tocContent = `---
-title: "React Documentation - Index of Contents (Pure Headers)"
+title: "React ${modeTitle} Documentation - Index of Contents (Pure Headers)"
 generated: ${timestamp}
 total_pages: ${validPages.length}
 ---
 
-# Index of Contents - React Documentation (Pure Headers)
+# Index of Contents - React ${modeTitle} Documentation (Pure Headers)
 
 > **Complete table of contents with ONLY pure content headers from ${validPages.length} documentation pages**
 > 
 > **Generated:** ${timestamp}  
-> **Source:** [React.dev Reference](https://react.dev/reference)
+> **Source:** [React.dev ${modeTitle}](https://react.dev/${this.config.mode})
 > **Filtered:** Excludes meta-content like "Note", "Pitfall", "Deep Dive", etc.
 
 ---
@@ -534,7 +643,7 @@ total_pages: ${validPages.length}
     // Process each page to extract headers
     for (const page of validPages) {
       try {
-        const markdownPath = path.join(MARKDOWN_DIR, page.filename);
+        const markdownPath = path.join(this.markdownDir, page.filename);
         const markdownContent = await fs.readFile(markdownPath, 'utf8');
         const headers = await this.extractPureHeadersFromMarkdown(markdownContent);
         
@@ -563,12 +672,12 @@ total_pages: ${validPages.length}
     tocContent += `- **Total Headers:** ${totalHeaders}\n`;
     tocContent += `- **Total Word Count:** ${validPages.reduce((sum, page) => sum + page.wordCount, 0).toLocaleString()}\n`;
     tocContent += `- **Generated:** ${timestamp}\n`;
-    tocContent += `- **Source:** React.dev Reference Documentation\n`;
+    tocContent += `- **Source:** React.dev ${modeTitle} Documentation\n`;
     tocContent += `- **Format:** Pure Headers Only (# ## ### ####)\n`;
     tocContent += `- **Filtered Out:** Meta-content, navigation elements, notes\n\n`;
     tocContent += `*This index contains only content headers for clean documentation navigation.*\n`;
 
-    const tocPath = path.join(MARKDOWN_DIR, '00-0-index-of-contents.md');
+    const tocPath = path.join(this.markdownDir, '00-0-index-of-contents.md');
     await fs.writeFile(tocPath, tocContent, 'utf8');
     Logger.success(`Pure headers index of contents created: 00-0-index-of-contents.md`);
     Logger.info(`Total headers extracted: ${totalHeaders}`);
@@ -607,8 +716,8 @@ total_pages: ${validPages.length}
       
       Logger.success(`Conversion completed: ${successCount}/${htmlFiles.length} files (${convertedCount} converted, ${skippedCount} skipped)`);
       Logger.info(`Total word count: ${totalWords.toLocaleString()} words`);
-      Logger.info(`Markdown files saved in: ${MARKDOWN_DIR}`);
-      Logger.info(`Index of contents: ${MARKDOWN_DIR}/00-0-index-of-contents.md`);
+      Logger.info(`Markdown files saved in: ${this.markdownDir}`);
+      Logger.info(`Index of contents: ${this.markdownDir}/00-0-index-of-contents.md`);
       
     } catch (error) {
       Logger.error(`Conversion failed: ${error.message}`);
@@ -618,10 +727,13 @@ total_pages: ${validPages.length}
 }
 
 async function main() {
-  Logger.info('Starting React Reference HTML-to-Markdown Converter');
+  const { mode } = parseArgs();
+  const config = { ...MODE_CONFIGS[mode], mode };
+  
+  Logger.info(`Starting React ${mode.charAt(0).toUpperCase() + mode.slice(1)} HTML-to-Markdown Converter`);
   
   try {
-    const converter = new MarkdownConverter();
+    const converter = new MarkdownConverter(config);
     await converter.convertAllPages();
     Logger.success('HTML-to-Markdown conversion completed successfully');
   } catch (error) {

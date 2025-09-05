@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * Phase 2: Download HTML Pages
- * Downloads original HTML content from all reference pages (20 concurrent)
- * Input: react-reference-links-*.json | Output: /html/{filename}.html files
+ * Phase 2: Download HTML Pages (Unified)
+ * Downloads original HTML content from React Reference OR Learn pages (20 concurrent)
+ * Input: react-{mode}-links.json | Output: /{mode}/html/{filename}.html files
+ * 
+ * Usage: node 02-download-html-unified.js --mode <reference|learn>
  */
 
 import puppeteer from 'puppeteer';
@@ -11,49 +13,143 @@ import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
 
-const OUTPUT_DIR = './react-reference';
-const HTML_DIR = './react-reference/html';
 const CONCURRENT_LIMIT = 20;
 const DELAY_BETWEEN_BATCHES = 2000;
 
-// Naming Functions
-const CHAPTER_MAPPING = {
-  '/reference/react': { number: 1, name: 'React Core' },
-  '/reference/react-dom': { number: 2, name: 'React DOM' },
-  '/reference/react-compiler': { number: 3, name: 'React Compiler' },
-  '/reference/rsc': { number: 4, name: 'React Server Components' },
-  '/reference/rules': { number: 5, name: 'Rules of React' }
-};
-
-const SECTION_PRIORITY = {
-  'overview': 1,
-  'hooks': 2,
-  'components': 3,
-  'apis': 4,
-  'client': 5,
-  'server': 6
-};
-
-function getChapterInfo(href) {
-  const pathParts = href.split('/').filter(p => p);
-  
-  if (pathParts.length < 2) return null;
-  
-  const chapterPath = `/${pathParts[0]}/${pathParts[1]}`;
-  const chapter = CHAPTER_MAPPING[chapterPath];
-  
-  if (!chapter) {
-    return { number: 99, name: 'Other' };
+// Mode-specific configurations
+const MODE_CONFIGS = {
+  reference: {
+    outputDir: './react-reference',
+    inputFile: 'react-reference-links.json',
+    chapterMapping: {
+      '/reference/react': { number: 1, name: 'React Core' },
+      '/reference/react-dom': { number: 2, name: 'React DOM' },
+      '/reference/react-compiler': { number: 3, name: 'React Compiler' },
+      '/reference/rsc': { number: 4, name: 'React Server Components' },
+      '/reference/rules': { number: 5, name: 'Rules of React' }
+    },
+    sectionPriority: {
+      'overview': 1,
+      'hooks': 2,
+      'components': 3,
+      'apis': 4,
+      'client': 5,
+      'server': 6
+    }
+  },
+  learn: {
+    outputDir: './react-learn',
+    inputFile: 'react-learn-links.json',
+    chapterMapping: {
+      '/learn': { number: 1, name: 'Get Started' },
+      '/learn/tutorial-tic-tac-toe': { number: 1, name: 'Get Started' },
+      '/learn/thinking-in-react': { number: 1, name: 'Get Started' },
+      '/learn/installation': { number: 1, name: 'Get Started' },
+      '/learn/setup': { number: 1, name: 'Get Started' },
+      '/learn/react-compiler': { number: 1, name: 'Get Started' },
+      '/learn/describing-the-ui': { number: 2, name: 'Learn React' },
+      '/learn/adding-interactivity': { number: 2, name: 'Learn React' },
+      '/learn/managing-state': { number: 2, name: 'Learn React' },
+      '/learn/escape-hatches': { number: 2, name: 'Learn React' }
+    },
+    sectionPriority: {
+      'quick-start': 1,
+      'tutorial': 2,
+      'thinking': 3,
+      'installation': 4,
+      'setup': 5,
+      'compiler': 6,
+      'describing': 7,
+      'adding': 8,
+      'managing': 9,
+      'escape': 10
+    }
   }
-  
-  return chapter;
+};
+
+function printUsage() {
+  console.log(`
+Usage: node 02-download-html-unified.js --mode <mode>
+
+Download HTML pages from React documentation.
+
+Options:
+  --mode <mode>     Download mode (required)
+                    Available modes: reference, learn
+  --help, -h        Show this help message
+
+Examples:
+  node 02-download-html-unified.js --mode reference
+  node 02-download-html-unified.js --mode learn
+
+Output:
+  reference mode: Downloads to ./react-reference/html/
+  learn mode:     Downloads to ./react-learn/html/
+`);
 }
 
-function getSectionPriority(text) {
-  const lowerText = text.toLowerCase();
+function parseArgs() {
+  const args = process.argv.slice(2);
   
-  for (const [keyword, priority] of Object.entries(SECTION_PRIORITY)) {
-    if (lowerText.includes(keyword)) {
+  if (args.includes('--help') || args.includes('-h')) {
+    printUsage();
+    process.exit(0);
+  }
+  
+  const modeIndex = args.indexOf('--mode');
+  if (modeIndex === -1 || modeIndex === args.length - 1) {
+    console.error('Error: --mode parameter is required');
+    printUsage();
+    process.exit(1);
+  }
+  
+  const mode = args[modeIndex + 1];
+  if (!MODE_CONFIGS[mode]) {
+    console.error(`Error: Invalid mode "${mode}". Available modes: ${Object.keys(MODE_CONFIGS).join(', ')}`);
+    printUsage();
+    process.exit(1);
+  }
+  
+  return { mode };
+}
+
+// Naming Functions
+function getChapterInfo(href, config) {
+  if (config.mode === 'reference') {
+    const pathParts = href.split('/').filter(p => p);
+    
+    if (pathParts.length < 2) return null;
+    
+    const chapterPath = `/${pathParts[0]}/${pathParts[1]}`;
+    const chapter = config.chapterMapping[chapterPath];
+    
+    if (!chapter) {
+      return { number: 99, name: 'Other' };
+    }
+    
+    return chapter;
+  } else {
+    // Learn mode - find the most specific match
+    const exactMatch = config.chapterMapping[href];
+    if (exactMatch) return exactMatch;
+    
+    // Check for partial matches
+    for (const [path, chapter] of Object.entries(config.chapterMapping)) {
+      if (href.startsWith(path)) {
+        return chapter;
+      }
+    }
+    
+    return { number: 99, name: 'Other' };
+  }
+}
+
+function getSectionPriority(text, href, config) {
+  const lowerText = text.toLowerCase();
+  const lowerHref = href ? href.toLowerCase() : '';
+  
+  for (const [keyword, priority] of Object.entries(config.sectionPriority)) {
+    if (lowerText.includes(keyword) || lowerHref.includes(keyword)) {
       return priority;
     }
   }
@@ -70,11 +166,11 @@ function cleanTitle(text) {
     .toLowerCase();
 }
 
-function organizeLinks(links) {
+function organizeLinks(links, config) {
   const chapters = {};
   
   links.forEach(link => {
-    const chapterInfo = getChapterInfo(link.href);
+    const chapterInfo = getChapterInfo(link.href, config);
     if (!chapterInfo) return;
     
     const chapterNum = chapterInfo.number;
@@ -87,7 +183,7 @@ function organizeLinks(links) {
     
     chapters[chapterNum].sections.push({
       ...link,
-      priority: getSectionPriority(link.text)
+      priority: getSectionPriority(link.text, link.href, config)
     });
   });
   
@@ -103,8 +199,8 @@ function organizeLinks(links) {
   return chapters;
 }
 
-function generateChapterSectionFilename(link, organizedLinks) {
-  const chapterInfo = getChapterInfo(link.href);
+function generateChapterSectionFilename(link, organizedLinks, config) {
+  const chapterInfo = getChapterInfo(link.href, config);
   if (!chapterInfo) {
     return cleanTitle(link.text);
   }
@@ -157,10 +253,12 @@ class Logger {
 }
 
 class HTMLDownloader {
-  constructor() {
+  constructor(config) {
+    this.config = config;
     this.browser = null;
     this.pages = [];
     this.organizedLinks = null;
+    this.htmlDir = path.join(config.outputDir, 'html');
   }
 
   async initBrowser() {
@@ -180,10 +278,11 @@ class HTMLDownloader {
     
     Logger.success(`Browser initialized with ${CONCURRENT_LIMIT} concurrent pages`);
   }
+
   async ensureDirectories() {
     try {
-      await fs.mkdir(OUTPUT_DIR, { recursive: true });
-      await fs.mkdir(HTML_DIR, { recursive: true });
+      await fs.mkdir(this.config.outputDir, { recursive: true });
+      await fs.mkdir(this.htmlDir, { recursive: true });
       Logger.info('Output directories ready');
     } catch (error) {
       Logger.error(`Failed to create directories: ${error.message}`);
@@ -195,20 +294,20 @@ class HTMLDownloader {
     try {
       Logger.step('Loading links from JSON file');
       
-      const filePath = path.join(OUTPUT_DIR, 'react-reference-links.json');
+      const filePath = path.join(this.config.outputDir, this.config.inputFile);
       
       try {
         await fs.access(filePath);
-        Logger.info(`Loading links from: react-reference-links.json`);
+        Logger.info(`Loading links from: ${this.config.inputFile}`);
       } catch {
-        throw new Error('No links JSON file found. Run sidebar scraper first.');
+        throw new Error(`No links JSON file found: ${this.config.inputFile}. Run sidebar scraper first.`);
       }
       
       const content = await fs.readFile(filePath, 'utf8');
       const links = JSON.parse(content);
       
       // Organize links for proper naming
-      this.organizedLinks = organizeLinks(links);
+      this.organizedLinks = organizeLinks(links, this.config);
       
       Logger.success(`Loaded ${links.length} links for processing`);
       Logger.info(`Organized into ${Object.keys(this.organizedLinks).length} chapters`);
@@ -224,12 +323,7 @@ class HTMLDownloader {
     try {
       const existingContent = await fs.readFile(filepath, 'utf8');
       
-      // Compare content length first (fast check)
-      if (existingContent.length !== newContent.length) {
-        return false;
-      }
-      
-      // Compare file hashes for definitive check
+      // Enhanced: Compare file hashes for definitive check (no more length comparison)
       const existingHash = crypto.createHash('sha256').update(existingContent).digest('hex');
       const newHash = crypto.createHash('sha256').update(newContent).digest('hex');
       
@@ -245,8 +339,8 @@ class HTMLDownloader {
       Logger.progress(index + 1, total, link.text);
       
       // Generate filename first
-      const filename = generateChapterSectionFilename(link, this.organizedLinks);
-      const filepath = path.join(HTML_DIR, `${filename}.html`);
+      const filename = generateChapterSectionFilename(link, this.organizedLinks, this.config);
+      const filepath = path.join(this.htmlDir, `${filename}.html`);
       
       await page.goto(link.fullUrl, { 
         waitUntil: 'networkidle0',
@@ -262,7 +356,7 @@ class HTMLDownloader {
         throw new Error('Content too short or empty');
       }
       
-      // Check if file exists and is identical
+      // Check if file exists and is identical using enhanced hash comparison
       const isIdentical = await this.checkExistingFile(filepath, htmlContent);
       if (isIdentical) {
         Logger.success(`Skipped: ${filename}.html (identical content)`);
@@ -293,22 +387,6 @@ class HTMLDownloader {
       Logger.error(`Failed to download ${link.fullUrl}: ${error.message}`);
       return null;
     }
-  }
-  // Legacy filename generation - kept for compatibility
-  generateFilename(href, text) {
-    let filename = href.replace(/^\//, '').replace(/\//g, '_');
-    
-    if (!filename || filename === 'reference') {
-      filename = text.toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-    }
-    
-    if (filename.length > 100) {
-      filename = filename.substring(0, 100);
-    }
-    
-    return filename;
   }
 
   async processBatch(batch, batchNumber, totalBatches) {
@@ -388,10 +466,13 @@ class HTMLDownloader {
 }
 
 async function main() {
-  Logger.info('Starting React Reference HTML Downloader');
+  const { mode } = parseArgs();
+  const config = { ...MODE_CONFIGS[mode], mode };
+  
+  Logger.info(`Starting React ${mode.charAt(0).toUpperCase() + mode.slice(1)} HTML Downloader`);
   
   try {
-    const downloader = new HTMLDownloader();
+    const downloader = new HTMLDownloader(config);
     await downloader.downloadAllPages();
     Logger.success('HTML download phase completed successfully');
   } catch (error) {
