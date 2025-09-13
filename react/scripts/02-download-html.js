@@ -19,7 +19,7 @@ const DELAY_BETWEEN_BATCHES = 2000;
 // Mode-specific configurations
 const MODE_CONFIGS = {
   reference: {
-    outputDir: './react-reference',
+    outputDir: './scripts/react-reference',
     inputFile: 'react-reference-links.json',
     chapterMapping: {
       '/reference/react': { number: 1, name: 'React Core' },
@@ -38,7 +38,7 @@ const MODE_CONFIGS = {
     }
   },
   learn: {
-    outputDir: './react-learn',
+    outputDir: './scripts/react-learn',
     inputFile: 'react-learn-links.json',
     chapterMapping: {
       '/learn': { number: 1, name: 'Get Started' },

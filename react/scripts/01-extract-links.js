@@ -16,13 +16,13 @@ import path from 'path';
 const MODE_CONFIGS = {
   reference: {
     targetUrl: 'https://react.dev/reference',
-    outputDir: './react-reference',
+    outputDir: './scripts/react-reference',
     outputFile: 'react-reference-links.json',
     description: 'React Reference Documentation'
   },
   learn: {
     targetUrl: 'https://react.dev/learn',
-    outputDir: './react-learn', 
+    outputDir: './scripts/react-learn', 
     outputFile: 'react-learn-links.json',
     description: 'React Learn Documentation'
   }

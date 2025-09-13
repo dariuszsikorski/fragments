@@ -11,12 +11,12 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs/promises';
 
-const SCRIPTS_DIR = '.';
+const SCRIPTS_DIR = import.meta.dirname || '.';
 
 // Mode-specific configurations
 const MODE_CONFIGS = {
   reference: {
-    outputDir: './react-reference',
+    outputDir: './scripts/react-reference',
     sectionName: 'Reference',
     description: 'React Reference Documentation',
     timestampPatterns: [
@@ -27,7 +27,7 @@ const MODE_CONFIGS = {
     ]
   },
   learn: {
-    outputDir: './react-learn',
+    outputDir: './scripts/react-learn',
     sectionName: 'Learn',
     description: 'React Learn Documentation',
     timestampPatterns: [
@@ -220,7 +220,7 @@ async function runScript(scriptPath, phaseName, mode) {
     const args = mode ? ['--mode', mode] : [];
     const child = spawn('node', [scriptPath, ...args], {
       stdio: ['inherit', 'pipe', 'pipe'],
-      cwd: process.cwd()
+      cwd: path.join(import.meta.dirname, '..')
     });
     
     let output = '';
@@ -276,19 +276,19 @@ async function runSingleMode(mode) {
     {
       number: 1,
       name: 'Extract Sidebar Links',
-      script: path.join(SCRIPTS_DIR, '01-extract-links-unified.js'),
+      script: path.join(SCRIPTS_DIR, '01-extract-links.js'),
       description: `Scraping sidebar navigation and extracting ${config.sectionName} section links`
     },
     {
       number: 2, 
       name: 'Download HTML Pages',
-      script: path.join(SCRIPTS_DIR, '02-download-html-unified.js'),
+      script: path.join(SCRIPTS_DIR, '02-download-html.js'),
       description: `Downloading original HTML content from all ${config.sectionName} pages (20 concurrent)`
     },
     {
       number: 3,
       name: 'Convert to Markdown',
-      script: path.join(SCRIPTS_DIR, '03-convert-markdown-unified.js'), 
+      script: path.join(SCRIPTS_DIR, '03-convert-markdown.js'), 
       description: `Converting HTML files to markdown using Mozilla Reader Mode (20 concurrent)`
     }
   ];
